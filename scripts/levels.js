@@ -20,11 +20,9 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const levelsDB = query(ref(db, 'levels'), orderByChild('pos'))
 
-const queryString = window.location.search;
-const urlParams = new URLSearchParams(queryString);
-const position = urlParams.get(pos)
+const urlParams = (new URL(document.location)).searchParams
+const position = urlParams.get("pos")
 console.log(position)
-document.title = position
 
 let levelName
 let levelCreator
@@ -40,7 +38,8 @@ onValue(levelsDB, function (snapshot) {
                 levelCreator = levelData[i][1].creator
                 levelVid = levelData[i][1].video
                 levelVid = levelVid.substr(17)
-                levelPos = levelData[i][1].pos
+                levelPos = levelData[i][1].position
+                document.title = "#" + position + " - " + levelName
 
                 document.getElementById("levelName").innerHTML = levelName
                 document.getElementById("levelCreator").textContent = "by " + levelCreator
