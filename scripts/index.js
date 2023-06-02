@@ -48,7 +48,7 @@ onValue(query(ref(db, 'levels'), orderByChild('pos')), function(snapshot){
         levelName.innerHTML = "#" + child.val().pos +" - "+ child.val().name
         levelName.classList.add("level-name")
         levelName.onclick = function(){
-          location.href = "level.html" + "?pos=" + child.val().pos
+          location.href = "level.html#?pos=" + child.val().pos
         }
         textContainer.append(levelName)
 
