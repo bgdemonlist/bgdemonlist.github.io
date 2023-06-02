@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
+        import { getDatabase, ref, push, onValue, remove, set, orderByKey, query } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"
+        // TODO: Add SDKs for Firebase products that you want to use
+        // https://firebase.google.com/docs/web/setup#available-libraries
+      
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+          apiKey: "AIzaSyBR-ImRkDyL_K3mwur6en4sXjj2WB9a-cs",
+          authDomain: "bulgarian-demonlist.firebaseapp.com",
+          databaseURL: "https://bulgarian-demonlist-default-rtdb.europe-west1.firebasedatabase.app",
+          projectId: "bulgarian-demonlist",
+          storageBucket: "bulgarian-demonlist.appspot.com",
+          messagingSenderId: "580475986041",
+          appId: "1:580475986041:web:82cc42325c06f6aa8f34a8"
+        };
+      
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getDatabase(app);
+        const button = document.getElementById("submit")
+        const name = document.getElementById("name")
+        const creator = document.getElementById("creator")
+        const position = document.getElementById("position")
+        const videoLink = document.getElementById("yt-vid")
+
+
+        button.addEventListener("click", function(){
+            let levelName = name.value
+            let levelCreator = creator.value
+            let levelPosition = position.value
+            let levelLink = videoLink.value
+            let listLength = 0
+            if(levelName!="" && levelCreator!="" && levelPosition!="" && levelLink!=""){
+                onValue(query(ref(db, "levels"), orderByKey('pos')), function(snapshot){
+                    if(snapshot.exists()){
+                        console.log(Object.entries(snapshot.val()).reverse())
+                    }
+                })
+                set(ref(db, "levels/" + levelName.toLowerCase()), {
+                    pos: parseInt(levelPosition),
+                    name: levelName,
+                    creator: levelCreator,
+                    video: levelLink
+
+                })
+                position.value = ""
+                name.value = ""
+                creator.value = ""
+                videoLink.value = ""
+            }
+            
+        })
+
+      </script>
+</head>
+<body>
+    <input id="name" placeholder="level name">
+    <input id="creator" placeholder="level creator">
+    <input id="position" placeholder="position">
+    <input id="yt-vid" placeholder="youtube link">
+    <button id="submit">submit</button>
+</body>
+</html>
