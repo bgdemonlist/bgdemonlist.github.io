@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>BG Demon List</title>
+	<link rel="stylesheet" href="css/levels.css">
+    <script src="scripts/global.js" type="module"></script>
+    <script src="scripts/levels.js" type="module"></script>
+</head>
+<body>
+	<header>
+		<h3 id="logo">Bulgarian Demon List</h3>
+		<nav>
+			<ul class="nav_links">
+				<li><a href="leaderboard.html">Leaderboard</a></li>
+				<li><a href="submit.html">Submit Record</a></li>
+			</ul>
+		</nav>
+		<a class="cta" href="login.html" id="loginButtonNav"><button>Login</button></a>
+		<a class="cta" href="user.html" style="display: none;" id="userButtonNav"><button>User</button></a>
+	</header>
+    <section id="level-section">
+        <div class="container">
+            <h2 class="titles" id="levelName"></h2>
+            <p class="sub-title" id="levelCreator"></p>
+            <iframe id="level-video"></iframe>
+            <h3 id="score-text">Points on completion:</h3>
+            <p id="score"></p>
+        </div>
+        <div class="container">
+            <h2 class="titles">Victors</h2>
+            <p class="sub-title" id="victor-count"></p>
+            <div id="victors-container">
+                <div id="victors-title">
+                    <h2>Holder</h2>
+                </div>
+            </div>
+        </div>
+    </section>
+</body>
+</html>

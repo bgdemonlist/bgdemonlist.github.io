@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>BG Demon List</title>
+	<link rel="stylesheet" href="css/login.css">
+	<script src="scripts/global.js" type="module"></script>
+	<script src="scripts/login.js" type="module"></script>
+</head>
+<body>
+	<header>
+		<h3 id="logo">Bulgarian Demon List</h3>
+		<nav>
+			<ul class="nav_links">
+				<li><a href="leaderboard.html">Leaderboard</a></li>
+				<li><a href="submit.html">Submit Record</a></li>
+			</ul>
+		</nav>
+		<a class="cta" href="login.html" id="loginButtonNav"><button>Login</button></a>
+		<a class="cta" href="user.html" style="display: none;" id="userButtonNav"><button>User</button></a>
+	</header>
+    <div class="section">
+        <h2 class="section-title">Login</h2>
+        <div class="form-container">
+            <input id="emailLogIn" placeholder="email">
+            <input id="passLogIn" placeholder="password" type="password">
+            <button id="submitLogIn">submit</button>
+        </div>
+    </div>
+	<div class="section">
+        <h2 class="section-title">Sign up</h2>
+        <div class="form-container">
+			<input id="userName" placeholder="name">
+            <input id="emailSignUp" placeholder="email">
+            <input id="passSignUp" placeholder="password" type="password">
+            <button id="submitSignUp">submit</button>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Leaderboard</title>
+	<link rel="stylesheet" href="css/leaderboard.css">
+	<script src="scripts/leaderboard.js" type="module"></script>
+	<script src="scripts/global.js" type="module"></script>
+</head>
+<body>
+	<header>
+		<h3 id="logo">Bulgarian Demon List</h3>
+		<nav>
+			<ul class="nav_links">
+				<li><a href="leaderboard.html">Leaderboard</a></li>
+				<li><a href="submit.html">Submit Record</a></li>
+			</ul>
+		</nav>
+		<a class="cta" href="login.html" id="loginButtonNav"><button>Login</button></a>
+		<a class="cta" href="user.html" style="display: none;" id="userButtonNav"><button>User</button></a>
+	</header>
+    <section id="mainContainer">
+        <div id="statsViewer">
+			<h1>Leaderboard</h1>
+			<div id="leaderboard">
+				<input id="player-search" placeholder="Search for player...">
+				<ul id="players-list">
+				</ul>
+			</div>
+        </div>
+		<div id="userStats">
+			<h1>Player</h1>
+        </div>
+    </section>
+</body>
+</html>

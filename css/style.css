@@ -1,0 +1,155 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap');
+
+*{
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body{
+    background-color: #2d2e34;
+}
+
+#logo{
+    font-family: 'Montserrat', sans-serif;
+    color: #edf0f1;
+    font-size: 30px;
+    cursor: pointer;
+    margin-right: auto;
+}
+
+li, a, button{
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    color: #edf0f1;
+    text-decoration: none;
+}
+
+header{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 30px 10%;
+    background-color: #00000069;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.nav_links{
+    list-style: none;
+}
+
+.nav_links li{
+    display: inline-block;
+    padding-right: 20px;
+}
+
+.nav_links li a{
+    transition: all 0.3s ease;
+}
+
+.nav_links li a:hover{
+    color: #0088a9;
+}
+
+.cta button {
+    margin-left: 20px;
+    padding: 9px 25px;
+    background-color: rgba(0,136,169,1);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cta button:hover{
+    background-color: rgba(0,136,169,0.8);
+}
+
+#levels-container{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+}
+
+.level-container{
+    margin-top: 20px;
+    width: 700px;
+    height: 150px;
+    border: rgba(255, 255, 255, 0.432);
+    border-width: 1px;
+    border-style: dashed;
+    display: flex;
+    box-shadow: 0 0 15px;
+}
+
+.level-img{
+    position: relative;
+    width: 206.52px;
+    height: 116.16px;
+    top: 50%;
+    transform: translate(0, -50%);
+    margin: 0 17px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 10px;
+
+}
+
+.level-img:hover{
+    transition: all 0.3s ease;
+    top: 40%;
+    transform: translate(0, -40%);
+}
+
+.level-name{
+    position: relative;
+    font-family: 'Montserrat', sans-serif;
+    color: #edf0f1;
+    font-size: 30px;
+    cursor: pointer;
+}
+
+.level-creator{
+    position: relative;
+    font-family: 'Montserrat', sans-serif;
+    color: rgb(164, 164, 164);
+    font-size: 20px;
+    font-style: italic;
+    cursor: default;
+}
+
+.level-text-container{
+    position: relative;
+    top: 20px;
+}
+
+@media only screen and (max-width: 650px) {
+    .level-container{
+        width: 370px;
+    }
+    .level-name{
+        font-size: 25px;
+    }
+    .level-img{
+        width: 150px;
+        height: 84.38px;
+    }
+    #logo{
+        font-size: 20px;
+    }
+    header li, a, button{
+        font-size: 15px
+    }
+    .cta button {
+        margin: 0;
+        padding: 9px 20px;
+    }
+    header{
+        padding: 10px;
+    }
+  }

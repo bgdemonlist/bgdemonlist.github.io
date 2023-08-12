@@ -1,0 +1,190 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap');
+
+*{
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body{
+    background-color: #2d2e34;
+}
+
+#logo{
+    font-family: 'Montserrat', sans-serif;
+    color: #edf0f1;
+    font-size: 30px;
+    cursor: pointer;
+    margin-right: auto;
+}
+
+li, a, button{
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 20px;
+    color: #edf0f1;
+    text-decoration: none;
+}
+
+header{
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    padding: 30px 10%;
+    background-color: #00000069;
+    position: sticky;
+    top: 0;
+}
+
+.nav_links{
+    list-style: none;
+}
+
+.nav_links li{
+    display: inline-block;
+    padding-right: 20px;
+}
+
+.nav_links li a{
+    transition: all 0.3s ease;
+}
+
+.nav_links li a:hover{
+    color: #0088a9;
+}
+
+.cta button {
+    margin-left: 20px;
+    padding: 9px 25px;
+    background-color: rgba(0,136,169,1);
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.cta button:hover{
+    background-color: rgba(0,136,169,0.8);
+}
+
+#mainContainer{
+    display: flex;
+    justify-content: center;
+    padding-top: 100px;
+    gap: 50px;
+}
+
+#statsViewer{
+    margin-top: 20px;
+    width: 700px;
+    height: 700px;
+    border: rgba(255, 255, 255, 0.432);
+    border-width: 1px;
+    border-style: dashed;
+    display: flex;
+    box-shadow: 0 0 15px;
+    align-items: center;
+    padding: 20px;
+    flex-direction: column;
+}
+
+#statsViewer h1{
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 50px;
+    color: #edf0f1;
+    text-decoration: none;
+}
+
+#leaderboard{
+    margin-top: 20px;
+    width: 500px;
+    height: 600px;
+    background-color: rgba(0, 0, 0, 0.158);
+    display: flex;
+    flex-direction: column;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    border-color: rgba(255, 255, 255, 0.438);
+    border-width: 2px;
+    border-style: solid;
+}
+
+#leaderboard input{
+    height: 50px;
+    border: none;
+    background-color: rgba(255, 255, 255, 0.473);
+    font-size: 30px;
+    padding: 20px;
+}
+
+#userStats{
+    margin-top: 20px;
+    width: 700px;
+    height: 700px;
+    border: rgba(255, 255, 255, 0.432);
+    border-width: 1px;
+    border-style: dashed;
+    display: flex;
+    box-shadow: 0 0 15px;
+    align-items: center;
+    padding: 20px;
+    flex-direction: column;
+}
+
+#userStats h1{
+    font-family: 'Montserrat', sans-serif;
+    font-weight: 500;
+    font-size: 50px;
+    color: #edf0f1;
+    text-decoration: none;
+}
+
+#players-list{
+    display: flex;
+    flex-direction: column;
+    list-style: none;
+}
+
+#players-list{
+    width: 100%;
+}
+
+#players-list div{
+    padding: 20px;
+    cursor: pointer;
+}
+
+.player-container-1{
+    background-color: rgba(0, 0, 0, 0.26);
+}
+
+.player-container-2{
+    background-color: rgba(63, 63, 63, 0.26);
+}
+
+@media only screen and (max-width: 650px) {
+    .level-container{
+        width: 370px;
+    }
+    .level-name{
+        font-size: 25px;
+    }
+    .level-img{
+        width: 150px;
+        height: 84.38px;
+    }
+    #logo{
+        font-size: 20px;
+    }
+    header li, a, button{
+        font-size: 15px
+    }
+    .cta button {
+        margin: 0;
+        padding: 9px 20px;
+    }
+    header{
+        padding: 10px;
+    }
+  }
