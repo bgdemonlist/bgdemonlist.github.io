@@ -51,6 +51,15 @@ function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+function calculatePoints(pos){
+    if(pos<=12){
+        return (Math.pow(0.9, pos))*323 + 32.3
+    }
+    else{
+        return Math.pow(1.026, 200-pos)
+    }
+}
+
 await get(ref(db, "users")).then(users => {
     users.forEach(user => {
         let temp = user.val()
@@ -64,7 +73,7 @@ await get(ref(db, "users")).then(users => {
                     if (levels.val()[record].pos < temp.hardest.pos) {
                         temp.hardest = levels.val()[record]
                     }
-                    temp.points += (323 - (recordPos - 1) * 6.46)
+                    temp.points += calculatePoints(recordPos)
                 })
                 playerList.sort((a, b) => (b.points - a.points))
             })
@@ -92,7 +101,7 @@ playerList.forEach(player => {
             playerPos = playerList.indexOf(player)
             playerName.innerHTML = playerList[playerPos].name
             hardestText.innerHTML = player.hardest.name
-            pointsText.innerHTML = player.points
+            pointsText.innerHTML = (player.points).toFixed(2)
             let records = Object.values(player.records)
             records.forEach(record => {
                 if (record.first == true) {
@@ -134,7 +143,7 @@ completionsList.innerHTML = ""
 playerPos = playerList.indexOf(player)
 playerName.innerHTML = playerList[playerPos].name
 hardestText.innerHTML = player.hardest.name
-pointsText.innerHTML = player.points
+pointsText.innerHTML = player.points.toFixed(2)
 let records = Object.values(player.records)
 records.forEach(record => {
     if (record.first == true) {

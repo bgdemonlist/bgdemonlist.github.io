@@ -24,6 +24,15 @@ const auth = getAuth(app);
 const loginButtonNav = document.getElementById("loginButtonNav")
 const userButtonNav = document.getElementById("userButtonNav")
 
+function calculatePoints(pos){
+    if(pos<=12){
+        return (Math.pow(0.9, pos))*323 + 32.3
+    }
+    else{
+        return Math.pow(1.026, 200-pos)
+    }
+}
+
 onAuthStateChanged(auth, (user) => {
     if (user) {
         loginButtonNav.style.display = "none"
@@ -75,7 +84,7 @@ get(ref(db, "levels")).then(snapshot => {
             document.getElementById("levelCreator").innerHTML = "By " + child.val().creator
             let levelVid = child.val().video.substr(17)
             document.getElementById("level-video").src = "https://www.youtube.com/embed/" + levelVid
-            let temp = (323 - (position - 1) * 6.46).toFixed(2)
+            let temp = calculatePoints(position).toFixed(2)
             if(temp < 0){
                 temp = 0
             }
