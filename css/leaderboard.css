@@ -18,7 +18,7 @@ body{
     margin-right: auto;
 }
 
-li, a, button{
+header li, a, button{
     font-family: 'Montserrat', sans-serif;
     font-weight: 500;
     font-size: 20px;
@@ -139,6 +139,7 @@ header{
     font-size: 50px;
     color: #edf0f1;
     text-decoration: none;
+    margin-bottom: 30px;
 }
 
 #players-list{
@@ -157,11 +158,80 @@ header{
 }
 
 .player-container-1{
-    background-color: rgba(0, 0, 0, 0.26);
+    background-color: rgba(39, 39, 39, 0.26);
 }
 
 .player-container-2{
     background-color: rgba(63, 63, 63, 0.26);
+}
+
+#players-list div h2{
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+}
+
+#players-list div h3{
+    color: rgb(153, 153, 153);
+    font-family: 'Montserrat', sans-serif;
+    font-style: italic;
+}
+
+.hide{
+    display: none;
+}
+
+#top-stats{
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+}
+
+.top-container{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.top-container h2{
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 30px;
+}
+
+#completions-container{
+    display: flex;
+    justify-content:space-between;
+    gap: 100px;
+    margin-top: 100px;
+}
+
+.completions-div{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.completions-div ul{
+    display: flex;
+    flex-direction: row;
+    list-style: none;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.completions-div ul li a h2{
+    color: rgb(199, 199, 199);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 17px;
+    margin: 5px;
+    font-style: italic;
+}
+
+.completions-title{
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    font-size: 30px;
 }
 
 @media only screen and (max-width: 650px) {
@@ -205,5 +275,8 @@ header{
     }
     #userStats h1{
         font-size: 30px;
+    }
+    #completions-container{
+        gap: 20px;
     }
   }
