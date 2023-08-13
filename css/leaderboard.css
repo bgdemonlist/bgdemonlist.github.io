@@ -72,6 +72,7 @@ header{
     justify-content: center;
     padding-top: 100px;
     gap: 50px;
+    flex-wrap: wrap;
 }
 
 #statsViewer{
@@ -186,5 +187,23 @@ header{
     }
     header{
         padding: 10px;
+    }
+    #statsViewer{
+        width: 100%;
+    }
+    #leaderboard{
+        width: 90%;
+    }
+    #statsViewer h1{
+        font-size: 30px;
+    }
+    #leaderboard input{
+        font-size: 20px;
+    }
+    #userStats{
+        width: 100%;
+    }
+    #userStats h1{
+        font-size: 30px;
     }
   }

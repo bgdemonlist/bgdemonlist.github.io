@@ -34,6 +34,7 @@ header{
     background-color: #00000069;
     position: sticky;
     top: 0;
+    z-index: 2;
 }
 
 .nav_links{
@@ -73,6 +74,7 @@ header{
     align-items: center;
     justify-content: center;
     gap: 20px;
+    flex-wrap: wrap;
 }
 
 .container{
@@ -182,16 +184,6 @@ header{
 }
 
 @media only screen and (max-width: 650px) {
-    .level-container{
-        width: 370px;
-    }
-    .level-name{
-        font-size: 25px;
-    }
-    .level-img{
-        width: 150px;
-        height: 84.38px;
-    }
     #logo{
         font-size: 20px;
     }
@@ -204,5 +196,11 @@ header{
     }
     header{
         padding: 10px;
+    }
+    #level-video{
+        position: relative;
+        height: 150px;
+        width: 266.66px;
+        border: none;
     }
   }
