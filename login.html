@@ -22,20 +22,30 @@
 		<a class="cta" href="user.html" style="display: none;" id="userButtonNav"><button>User</button></a>
 	</header>
     <div class="section">
-        <h2 class="section-title">Login</h2>
-        <div class="form-container">
-            <input id="emailLogIn" placeholder="email">
-            <input id="passLogIn" placeholder="password" type="password">
-            <button id="submitLogIn">submit</button>
+        
+        <div class="form-container" id="login-section">
+			<h2 class="section-title">Login</h2>
+            <input id="emailLogIn" placeholder="Email" type="email">
+            <input id="passLogIn" placeholder="Password" type="password">
+			<div id="no-acc">
+				<p>No account?</p>
+				<p id="sign-up">Create one!</p>
+			</div>
+			<div >
+				<p id="forgot-pass">I forgor my password 💀</p>
+			</div>
+			
+            <button id="submitLogIn">Login</button>
         </div>
     </div>
 	<div class="section">
-        <h2 class="section-title">Sign up</h2>
-        <div class="form-container">
-			<input id="userName" placeholder="name">
-            <input id="emailSignUp" placeholder="email">
-            <input id="passSignUp" placeholder="password" type="password">
-            <button id="submitSignUp">submit</button>
+        <div class="form-container" id="sign-up-section">
+			<h2 class="section-title">Sign up</h2>
+			<input id="userName" placeholder="Username">
+            <input id="emailSignUp" placeholder="Email">
+            <input id="passSignUp" placeholder="Password" type="password">
+			<input id="passSignUp2" placeholder="Repeat Password" type="password">
+            <button id="submitSignUp">Sign Up</button>
         </div>
     </div>
 </body>

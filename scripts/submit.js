@@ -32,9 +32,15 @@ const section = document.getElementById("container")
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        loginButtonNav.style.display = "none"
-        userButtonNav.style.display = "block"
-        loginError.style.display = "none"
+        get(ref(db, "users/"+user.uid)).then(snapshot=>{
+            userButtonNav.innerHTML = 
+            `
+            <button>${snapshot.val().name}</button>
+            `
+            loginButtonNav.style.display = "none"
+            userButtonNav.style.display = "block"
+        })
+        section.style.display = "block"
         const uid = user.uid
         submitButton.addEventListener("click", function () {
             if (posInput.value != "" && vidInput.value != "") {
@@ -60,7 +66,7 @@ onAuthStateChanged(auth, (user) => {
         })
     }
     else {
-        section.style.display = "none"
+        loginError.style.display = "block"
     }
 })
 

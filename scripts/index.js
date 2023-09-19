@@ -25,13 +25,16 @@ const loginButtonNav = document.getElementById("loginButtonNav")
 const userButtonNav = document.getElementById("userButtonNav")
 
 onAuthStateChanged(auth, (user) => {
-    if(user){
-        loginButtonNav.style.display = "none"
-        userButtonNav.style.display = "block"
-    }
-    else{
-        console.log("not logged in")
-    }
+  if (user) {
+      get(ref(db, "users/" + user.uid)).then(snapshot => {
+          userButtonNav.innerHTML =
+              `
+          <button>${snapshot.val().name}</button>
+          `
+          loginButtonNav.style.display = "none"
+          userButtonNav.style.display = "block"
+      })
+  }
 })
 
 const levelSection = document.getElementById("levels-container")

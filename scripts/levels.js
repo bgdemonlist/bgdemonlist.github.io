@@ -35,11 +35,14 @@ function calculatePoints(pos){
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        loginButtonNav.style.display = "none"
-        userButtonNav.style.display = "block"
-    }
-    else {
-        console.log("not logged in")
+        get(ref(db, "users/" + user.uid)).then(snapshot => {
+            userButtonNav.innerHTML =
+                `
+            <button>${snapshot.val().name}</button>
+            `
+            loginButtonNav.style.display = "none"
+            userButtonNav.style.display = "block"
+        })
     }
 })
 

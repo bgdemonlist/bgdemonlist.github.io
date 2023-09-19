@@ -87,7 +87,6 @@ header{
     font-family: 'Montserrat', sans-serif;
     color: #edf0f1;
     font-size: 30px;
-    margin-bottom: 20px;
 }
 
 .form-container{
@@ -98,36 +97,77 @@ header{
     gap: 20px;
     border-color: rgba(255, 255, 255, 0.432);
     border-width: 1px;
-    border-style:dashed;
-    align-items: center;
+    border-style:solid;
+    align-items: left;
 }
 
 .form-container input{
+    transition: all 0.3s ease;
+    border: none;
     height: 50px;
     font-size: 20px;
-    border-radius: 5px;
     background:none;
-    border-color: rgba(255, 255, 255, 0.432);
-    border-width: 1px;
-    border-style:dashed;
-    padding: 10px;
+    border-bottom-color: rgba(255, 255, 255, 0.432);
+    border-bottom-width: 1px;
+    border-bottom-style:solid;
     color: white;
+    
+}
+
+.form-container input:focus{
+    outline: none;
+    border-bottom-color: rgba(0,136,169,1);
+    transition: all 0.3s ease;
 }
 
 .form-container button{
     height: 50px;
     width: 100px;
+    border: none;
     background:none;
-    border-color: rgba(255, 255, 255, 0.432);
-    border-width: 1px;
-    border-style:dashed;
     cursor: pointer;
     transition: all 0.3s ease;
+    background-color: rgba(0,136,169,1);
 }
 
 .form-container button:hover{
     transition: all 0.3s ease;
-    background-color: rgba(255, 255, 255, 0.199);
+    background-color: rgba(0,136,169,0.8);
+}
+#no-acc{
+    display: flex;
+    font-family: 'Montserrat', sans-serif;
+    color: #edf0f1;
+    font-size: 15px;
+}
+
+#sign-up{
+    color: #00bfff;
+    padding-left: 5px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#sign-up:hover{
+    color: #009bcf;
+    transition: all 0.2s ease;
+}
+
+#sign-up-section{
+    display:none;
+}
+
+#forgot-pass{
+    display: flex;
+    font-family: 'Montserrat', sans-serif;
+    color: #00bfff;
+    font-size: 15px;
+    cursor: pointer;
+}
+
+#forgot-pass:hover{
+    color: #009bcf;
+    transition: all 0.2s ease;
 }
 
 #options{

@@ -26,8 +26,14 @@ const userButtonNav = document.getElementById("userButtonNav")
 
 onAuthStateChanged(auth, (user) => {
     if(user){
-        loginButtonNav.style.display = "none"
-        userButtonNav.style.display = "block"
+        get(ref(db, "users/"+user.uid)).then(snapshot=>{
+            userButtonNav.innerHTML = 
+            `
+            <button>${snapshot.val().name}</button>
+            `
+            loginButtonNav.style.display = "none"
+            userButtonNav.style.display = "block"
+        })
         get(ref(db, "users")).then((snapshot)=>{
             document.getElementById("name").innerHTML = snapshot.val()[user.uid].name
             let records = snapshot.val()[user.uid].records
@@ -39,12 +45,10 @@ onAuthStateChanged(auth, (user) => {
                     <a href="${records[Object.keys(records)[i]].video}"><h3 class="level-text">${levelName}</h3></a>
                     `
                 }
-                else{
                     document.getElementById("completion").innerHTML+=
                     `
                     <a href="${records[Object.keys(records)[i]].video}"><h3 class="level-text">${levelName}</h3></a>
                     `
-                }
             }
         })
     }

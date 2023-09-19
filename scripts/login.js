@@ -41,19 +41,36 @@ const submitSignUpButton = document.getElementById("submitSignUp")
 const emailSignUpInput = document.getElementById("emailSignUp")
 const passSignUpInput = document.getElementById("passSignUp")
 const userNameInput = document.getElementById("userName")
+const displaySignUp = document.getElementById("sign-up")
+const SignUpSection = document.getElementById("sign-up-section")
+const LoginSection = document.getElementById("login-section")
+const forgotPass = document.getElementById("forgot-pass")
+
+displaySignUp.addEventListener("click", function(){
+    SignUpSection.style.display = "flex"
+    LoginSection.style.display = "none"
+})
+
+forgotPass.addEventListener("click", function(){
+    alert('dm "soletki" on discord 👍')
+})
 
 submitSignUpButton.addEventListener("click", function(){
     const email = emailSignUpInput.value
     const pass = passSignUpInput.value
     const name = userNameInput.value
 
-    createUserWithEmailAndPassword(auth, email, pass).then(cred => {
-        set(ref(db, "users/" + cred.user.uid),{
-            name: name,
-            mod: false
-        }).then(function(){
-            location.href = "user.html"
-        })
+    onAuthStateChanged(auth, (user) => {
+        if (user) {
+            get(ref(db, "users/"+user.uid)).then(snapshot=>{
+                userButtonNav.innerHTML = 
+                `
+                <button>${snapshot.val().name}</button>
+                `
+                loginButtonNav.style.display = "none"
+                userButtonNav.style.display = "block"
+            })
+        }
     })
 })
 

@@ -71,6 +71,7 @@ header{
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
+    display: none;
 }
 
 .section{
@@ -170,6 +171,7 @@ header{
 
 #login-error{
     margin-top: 50px;
+    display: none;
 }
 
 @media only screen and (max-width: 650px) {
