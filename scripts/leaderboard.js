@@ -96,7 +96,6 @@ playerList.forEach(player => {
         }
 
         newPlayer.addEventListener("click", () => {
-            firstVictorList.innerHTML = ""
             completionsList.innerHTML = ""
             playerPos = playerList.indexOf(player)
             playerName.innerHTML = playerList[playerPos].name
@@ -105,13 +104,15 @@ playerList.forEach(player => {
             let records = Object.values(player.records)
             records.forEach(record => {
                 if (record.first == true) {
-                    firstVictorList.innerHTML += `
+                    completionsList.innerHTML += `
+                    <li><a href="${record.video}"><h2 id="first">${record.name}</h2></a></li>
+                    `
+                }else{
+                    completionsList.innerHTML += `
                     <li><a href="${record.video}"><h2>${record.name}</h2></a></li>
                     `
                 }
-                completionsList.innerHTML += `
-                    <li><a href="${record.video}"><h2>${record.name}</h2></a></li>
-                    `
+                
             })
         })
 
@@ -138,7 +139,6 @@ playerSearch.addEventListener("input", e => {
 })
 
 let player = playerList[0]
-firstVictorList.innerHTML = ""
 completionsList.innerHTML = ""
 playerPos = playerList.indexOf(player)
 playerName.innerHTML = playerList[playerPos].name
@@ -147,11 +147,12 @@ pointsText.innerHTML = player.points.toFixed(2)
 let records = Object.values(player.records)
 records.forEach(record => {
     if (record.first == true) {
-        firstVictorList.innerHTML += `
-                    <li><a href="${record.video}"><h2>${record.name}</h2></a></li>
-                    `
+        completionsList.innerHTML += `
+        <li><a href="${record.video}"><h2 id="first">${record.name}</h2></a></li>
+        `
+    }else{
+        completionsList.innerHTML += `
+        <li><a href="${record.video}"><h2>${record.name}</h2></a></li>
+        `
     }
-    completionsList.innerHTML += `
-                    <li><a href="${record.video}"><h2>${record.name}</h2></a></li>
-                    `
 })

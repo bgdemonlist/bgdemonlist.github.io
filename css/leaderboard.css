@@ -220,7 +220,8 @@ header{
     list-style: none;
     flex-wrap: wrap;
     justify-content: center;
-    width: 250px;
+    width: auto;
+    margin: 10px 20px;
 }
 
 .completions-div ul li a h2{
@@ -229,12 +230,21 @@ header{
     font-size: 17px;
     margin: 5px;
     font-style: italic;
+    text-decoration: underline;
 }
 
 .completions-title{
     color: white;
     font-family: 'Montserrat', sans-serif;
     font-size: 30px;
+}
+
+#first{
+    color: rgba(0,136,169,1);
+    font-family: 'Montserrat', sans-serif;
+    font-size: 17px;
+    font-style: normal;
+    
 }
 
 @media only screen and (max-width: 650px) {

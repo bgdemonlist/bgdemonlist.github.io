@@ -29,9 +29,6 @@ onAuthStateChanged(auth, (user) => {
         loginButtonNav.style.display = "none"
         userButtonNav.style.display = "block"
     }
-    else{
-        console.log("not logged in")
-    }
 })
 
 const submitLoginButton = document.getElementById("submitLogIn")
@@ -40,6 +37,7 @@ const passLogInInput = document.getElementById("passLogIn")
 const submitSignUpButton = document.getElementById("submitSignUp")
 const emailSignUpInput = document.getElementById("emailSignUp")
 const passSignUpInput = document.getElementById("passSignUp")
+const passSignUpInput2 = document.getElementById("passSignUp2")
 const userNameInput = document.getElementById("userName")
 const displaySignUp = document.getElementById("sign-up")
 const SignUpSection = document.getElementById("sign-up-section")
@@ -58,20 +56,38 @@ forgotPass.addEventListener("click", function(){
 submitSignUpButton.addEventListener("click", function(){
     const email = emailSignUpInput.value
     const pass = passSignUpInput.value
+    const pass2 = passSignUpInput2.value
     const name = userNameInput.value
 
-    onAuthStateChanged(auth, (user) => {
-        if (user) {
-            get(ref(db, "users/"+user.uid)).then(snapshot=>{
-                userButtonNav.innerHTML = 
-                `
-                <button>${snapshot.val().name}</button>
-                `
-                loginButtonNav.style.display = "none"
-                userButtonNav.style.display = "block"
+    if(pass!=pass2){
+        alert("Passwords don't match!")
+        return 0
+    }
+    else if(name == ''){
+        alert("Please enter a username!")
+        return 0
+    }
+    else{
+        createUserWithEmailAndPassword(auth, email, pass)
+        .then(cred=>{
+            const user = cred.user
+            set(ref(db, "users/" + user.uid), {
+                name: name,
+                mod: false
+            }).then(function(){
+                location.href = "user.html"
             })
-        }
-    })
+        })
+        .catch(error=>{
+            if(error.code=='auth/weak-password'){
+                alert("Password should be atleast 6 characters long!")
+            }
+            if(error.code=='auth/missing-email'){
+                alert("Make sure you are using an actual email!")
+            }
+        })
+    }
+    
 })
 
 submitLoginButton.addEventListener("click", function(){
