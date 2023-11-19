@@ -19,10 +19,6 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
-const auth = getAuth(app);
-
-const loginButtonNav = document.getElementById("loginButtonNav")
-const userButtonNav = document.getElementById("userButtonNav")
 
 function calculatePoints(pos){
     if(pos<=12){
@@ -33,18 +29,7 @@ function calculatePoints(pos){
     }
 }
 
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        get(ref(db, "users/" + user.uid)).then(snapshot => {
-            userButtonNav.innerHTML =
-                `
-            <button>${snapshot.val().name}</button>
-            `
-            loginButtonNav.style.display = "none"
-            userButtonNav.style.display = "block"
-        })
-    }
-})
+
 
 const urlParams = (new URL(document.location)).searchParams
 const position = urlParams.get("pos")

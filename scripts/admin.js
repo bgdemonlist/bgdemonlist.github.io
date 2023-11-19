@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove, set, orderByChild, orderByKey, query, get, update } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"
-import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -20,9 +20,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth(app);
-
-const loginButtonNav = document.getElementById("loginButtonNav")
-const userButtonNav = document.getElementById("userButtonNav")
 
 function moveDemon(name, newPos) {
     get(ref(db, "levels/" + name)).then(snapshot => {
@@ -50,8 +47,9 @@ function moveDemon(name, newPos) {
 
 onAuthStateChanged(auth, (user) => {
     if (user) {
-        loginButtonNav.style.display = "none"
-        userButtonNav.style.display = "block"
+        console.log("logged in")
+        contentSection.style.display = "block"
+        loginForm.style.display = "none"
     }
     else {
         console.log("not logged in")
@@ -63,15 +61,32 @@ const delInput = document.getElementById("del-level-name")
 const moveNameInput = document.getElementById("move-level-name")
 const movePosInput = document.getElementById("move-level-pos")
 const moveSubmit = document.getElementById("submit3")
+const recordSubmit = document.getElementById("submit4")
 const name = document.getElementById("name")
 const levelList = document.getElementById("options")
 const moveList = document.getElementById("moveOptions")
 const creator = document.getElementById("creator")
 const position = document.getElementById("position")
 const videoLink = document.getElementById("yt-vid")
-const recordContainer = document.getElementById("records")
+const loginForm = document.getElementById("login-form")
+const contentSection = document.getElementById("content-section")
+const recordLevelName = document.getElementById("record-level-name")
+const recordPlayerName = document.getElementById("record-player-name")
+const recordVideo = document.getElementById("record-video")
 let levels = []
-let recordN = 0
+
+loginForm.addEventListener("submit", (event)=>{
+    event.preventDefault()
+    const email = document.getElementById("email").value
+    const pass = document.getElementById("password").value
+    signInWithEmailAndPassword(auth, email, pass).then(()=>{
+        contentSection.style.display = "block"
+        loginForm.style.display = "none"
+    })
+    .catch((e)=>{
+        alert(e)
+    })
+})
 
 moveSubmit.addEventListener("click", () => {
     const name = moveNameInput.value.toLowerCase()
@@ -96,83 +111,6 @@ moveSubmit.addEventListener("click", () => {
 
     moveNameInput.value = ""
     movePosInput.value = ""
-})
-
-get(ref(db, "records")).then((snapshot) => {
-    snapshot.forEach(child => {
-        let childUid = child.val().uid
-        get(ref(db, "users")).then((snapshot) => {
-            let childName = snapshot.val()[childUid].name
-            // recordContainer.innerHTML +=
-            //     `
-            // <div>
-            //     <p>${childName} | Pos: ${child.val().pos} | <a href="${child.val().video}">Video</a></p>
-            //     <p class="control"><i class="fa-solid fa-check accept-record"></i> <i class="fa-regular fa-x deny-record"></i></p>
-            // </div>
-            // `
-            let newContainer = document.createElement("div")
-            let firstLine = document.createElement("p")
-            firstLine.innerHTML = childName + " | Pos: " + child.val().pos + " | <a href=" + child.val().video + ">Video</a>"
-            newContainer.append(firstLine)
-            let secondLine = document.createElement("p")
-            secondLine.classList.add("control")
-            let tick = document.createElement("i")
-            tick.classList.add("fa-solid")
-            tick.classList.add("fa-check")
-            tick.classList.add("accept-record")
-            secondLine.append(tick)
-            let cross = document.createElement("i")
-            cross.classList.add("fa-regular")
-            cross.classList.add("fa-x")
-            cross.classList.add("deny-record")
-            secondLine.append(cross)
-            newContainer.append(secondLine)
-            recordContainer.append(newContainer)
-
-            tick.addEventListener("click", function () {
-                get(query(ref(db, "levels"), orderByChild('pos'))).then((snapshot) => {
-                    snapshot.forEach(lev => {
-                        if (lev.val().pos == child.val().pos) {
-                            if (lev.val().records) {
-                                set(ref(db, "levels/" + lev.val().name.toLowerCase() + "/records/" + childName.toLowerCase()), {
-                                    name: childName,
-                                    video: child.val().video,
-                                    recordNum: Object.keys(lev.val().records).length
-                                })
-                            } else {
-                                set(ref(db, "levels/" + lev.val().name.toLowerCase() + "/records/" + childName.toLowerCase()), {
-                                    name: childName,
-                                    video: child.val().video,
-                                    recordNum: 0
-                                })
-                            }
-
-                            if (lev.val().records) {
-                                set(ref(db, "users/" + child.val().uid + "/records/" + lev.val().name.toLowerCase()), {
-                                    name: lev.val().name,
-                                    video: child.val().video,
-                                    first: false
-                                })
-                            } else {
-                                set(ref(db, "users/" + child.val().uid + "/records/" + lev.val().name.toLowerCase()), {
-                                    name: lev.val().name,
-                                    video: child.val().video,
-                                    first: true
-                                })
-                            }
-
-                        }
-                    })
-                })
-
-                remove(ref(db, "records/" + child.val().recordId))
-            })
-
-            cross.addEventListener("click", function () {
-                remove(ref(db, "records/" + child.val().recordId))
-            })
-        })
-    })
 })
 
 
@@ -252,21 +190,36 @@ buttondel.addEventListener("click", function () {
 
 })
 
+recordSubmit.addEventListener("click", async ()=>{
+    const levelName = recordLevelName.value
+    const playerName = recordPlayerName.value
+    const link = recordVideo.value
+    let first = true
+    let recordNum = 0
 
-delInput.addEventListener("keyup", () => {
-    let arr = []
-    let searchedVal = delInput.value.toLowerCase()
-    arr = levels.filter(data => {
-        return data.toLowerCase().startsWith(searchedVal)
+    await get(ref(db, "levels/" + levelName.toLowerCase() + "/records")).then(s=>{
+        if(s.exists()){
+            recordNum = Object.keys(s.val()).length
+            first = false
+        }
     })
-    arr.forEach(function (i) {
-        let newLi = document.createElement("li")
-        newLi.innerHTML = i
-        newLi.addEventListener("click", function () {
-            delInput.value = newLi.innerHTML
-        })
-        levelList.append(newLi)
+
+    await get(ref(db, "users/" + playerName)).then(s=>{
+        if(!s.exists()){
+            set(ref(db, "users/" + playerName),{
+                name: playerName
+            })
+        }
     })
-    levelList.innerHTML = arr
+
+    set(ref(db, "levels/" + levelName.toLowerCase() + "/records/" + playerName.toLowerCase()), {
+        name: playerName,
+        video: link,
+        recordNum: recordNum
+    })
+    set(ref(db, "users/" + playerName + "/records/" + levelName.toLowerCase()),{
+        name: levelName,
+        video: link,
+        first: first
+    })
 })
-

@@ -7,64 +7,68 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link rel="stylesheet" href="css/admin.css">
+    <link rel="stylesheet" href="css/global.css">
     <script type="module" src="scripts/admin.js"></script>
     <script src="scripts/global.js" type="module"></script>
     <script src="https://kit.fontawesome.com/3bf95488a2.js" crossorigin="anonymous"></script>
 </head>
 
-<body>
+<body> 
     <header>
-		<h3 id="logo">Bulgarian Demon List</h3>
-		<nav>
-			<ul class="nav_links">
-				<li><a href="leaderboard.html">Leaderboard</a></li>
-				<li><a href="submit.html">Submit Record</a></li>
-			</ul>
-		</nav>
-		<a class="cta" href="login.html" id="loginButtonNav"><button>Login</button></a>
-		<a class="cta" href="user.html" style="display: none;" id="userButtonNav"><button>User</button></a>
-	</header>
-    <section id="container">
-        <div class="section">
-            <h2 class="section-title">Upload Level</h2>
-            <div class="form-container">
-                <input id="name" placeholder="level name">
-                <input id="creator" placeholder="level creator">
-                <input id="position" placeholder="position">
-                <input id="yt-vid" placeholder="youtube link">
-                <button id="submit">submit</button>
-            </div>
-        </div>
-        <div class="section">
-            <h2 class="section-title">Delete Level</h2>
-            <div class="form-container">
-                <input type="text" placeholder="Level name" id="del-level-name">
-                <ul id="options">
-                </ul>
-                <button id="submit2">submit</button>
-            </div>
-        </div>
-        <div class="section">
-            <h2 class="section-title">Move Level</h2>
-            <div class="form-container">
-                <input type="text" placeholder="Level name" id="move-level-name">
-                <input type="text" placeholder="New pos" id="move-level-pos">
-                <ul id="moveOptions">
-                </ul>
-                <button id="submit3">submit</button>
-            </div>
-        </div>
-        <div class="section">
-            <h2 class="section-title">Manage records</h2>
-            <div class="form-container">
-                <div id="records">
+        <h3 id="logo">Bulgarian Demon List</h3>
+        <nav>
+            <ul class="nav_links">
+                <li><a href="leaderboard.html">Leaderboard</a></li>
+            </ul>
+        </nav>
+    </header>
+    <form id="login-form">
+        <input id="email" placeholder="email">
+        <input id="password" placeholder="password">
+        <button id="login-button" style="color: black;">submit</button>
+    </form>
+    <section id="content-section">
+        <section id="container">
+            <div class="section">
+                <h2 class="section-title">Upload Level</h2>
+                <div class="form-container">
+                    <input id="name" placeholder="level name">
+                    <input id="creator" placeholder="level creator">
+                    <input id="position" placeholder="position">
+                    <input id="yt-vid" placeholder="youtube link">
+                    <button id="submit">submit</button>
                 </div>
             </div>
-        </div>
+            <div class="section">
+                <h2 class="section-title">Delete Level</h2>
+                <div class="form-container">
+                    <input type="text" placeholder="Level name" id="del-level-name">
+                    <ul id="options">
+                    </ul>
+                    <button id="submit2">submit</button>
+                </div>
+            </div>
+            <div class="section">
+                <h2 class="section-title">Move Level</h2>
+                <div class="form-container">
+                    <input type="text" placeholder="Level name" id="move-level-name">
+                    <input type="text" placeholder="New pos" id="move-level-pos">
+                    <ul id="moveOptions">
+                    </ul>
+                    <button id="submit3">submit</button>
+                </div>
+            </div>
+            <div class="section">
+                <h2 class="section-title">Manage records</h2>
+                <div class="form-container">
+                    <input type="text" placeholder="Level Name" id="record-level-name">
+                    <input type="text" placeholder="Player Name" id="record-player-name"> 
+                    <input type="text" placeholder="Video Link" id="record-video">
+                    <button id="submit4">submit</button> 
+                </div>
+            </div>
+        </section>
     </section>
-    
-    
-    
 </body>
 
 </html>
