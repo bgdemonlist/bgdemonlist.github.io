@@ -10,7 +10,7 @@ body{
     background-color: #2d2e34;
 }
 
-#logo{
+#logo a{
     font-family: 'Montserrat', sans-serif;
     color: #edf0f1;
     font-size: 30px;
