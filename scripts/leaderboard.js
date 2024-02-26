@@ -28,12 +28,16 @@ const hardestText = document.getElementById("hardest-text")
 const pointsText = document.getElementById("points-text")
 const firstVictorList = document.getElementById("first-victor-list")
 const completionsList = document.getElementById("completions-list")
-let playerPos = 1
+let playerPos = 0
 let playerList = []
+let levelsList = []
 
-
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+function getPosFromLevelName(name){
+    for(let i in levelsList){
+        if(name.localeCompare(levelsList[i].name)==0){
+            return levelsList[i].pos;
+        }
+    }
 }
 
 function calculatePoints(pos){
@@ -46,32 +50,36 @@ function calculatePoints(pos){
 }
 
 await get(ref(db, "users")).then(users => {
-    users.forEach(user => {
-        let temp = user.val()
-        temp.points = 0
-        if (user.val().records) {
-            get(ref(db, "levels")).then(levels => {
-                let recordList = Object.keys(user.val().records)
-                temp.hardest = levels.val()[recordList[0]]
-                recordList.forEach(record => {
-                    let recordPos = levels.val()[record].pos
-                    if (levels.val()[record].pos < temp.hardest.pos) {
-                        temp.hardest = levels.val()[record]
-                    }
-                    temp.points += calculatePoints(recordPos)
-                })
-                playerList.sort((a, b) => (b.points - a.points))
-            })
-        }
-        playerList.push(temp)
+    users.forEach(user=>{
+        playerList.push(user.val());
     })
 })
 
-await sleep(200)
+await playerList.forEach(player=>{
+    player.points = 0;
+    player.hardest = Object.values(player.records)[0]
+})
 
-let i = 1
+await get(query(ref(db, "levels"), orderByChild('pos'))).then(levels => {
+    levels.forEach(level=>{
+        levelsList.push(level.val());
+    })
+})
 
-playerList.forEach(player => {
+await playerList.forEach(player=>{
+    Object.values(player.records).forEach(value=>{
+        if(getPosFromLevelName(value.name)<getPosFromLevelName(player.hardest.name)){
+            player.hardest = value
+        }
+        player.points+=calculatePoints(getPosFromLevelName(value.name))
+    })
+})
+
+await playerList.sort((a, b) => (b.points - a.points))
+
+let i=1
+
+await playerList.forEach(player => {
     if (player.points != 0) {
         let newPlayer = document.createElement("div")
         if (i % 2 == 0) {
@@ -113,8 +121,6 @@ playerList.forEach(player => {
     i++
 })
 
-await sleep(200)
-
 playerSearch.addEventListener("input", e => {
     const value = e.target.value.toLowerCase()
     playerList.forEach(player => {
@@ -123,21 +129,114 @@ playerSearch.addEventListener("input", e => {
     })
 })
 
-let player = playerList[0]
+console.log(playerList)
+console.log(levelsList)
+
 completionsList.innerHTML = ""
-playerPos = playerList.indexOf(player)
 playerName.innerHTML = playerList[playerPos].name
-hardestText.innerHTML = player.hardest.name
-pointsText.innerHTML = player.points.toFixed(2)
-let records = Object.values(player.records)
+hardestText.innerHTML = playerList[playerPos].hardest.name
+pointsText.innerHTML = (playerList[playerPos].points).toFixed(2)
+let records = Object.values(playerList[playerPos].records)
 records.forEach(record => {
     if (record.first == true) {
         completionsList.innerHTML += `
         <li><a href="${record.video}"><h2 id="first">${record.name}</h2></a></li>
         `
     }else{
-        completionsList.innerHTML += `
+         completionsList.innerHTML += `
         <li><a href="${record.video}"><h2>${record.name}</h2></a></li>
         `
     }
+                
 })
+
+
+
+// await get(ref(db, "users")).then(users => {
+//     users.forEach(user => {
+//         let temp = user.val()
+//         temp.points = 0
+//         if (user.val().records) {
+//             get(ref(db, "levels")).then(levels => {
+//                 let recordList = Object.keys(user.val().records)
+//                 temp.hardest = levels.val()[recordList[0]]
+//                 recordList.forEach(record => {
+//                     let recordPos = levels.val()[record].pos
+//                     if (levels.val()[record].pos < temp.hardest.pos) {
+//                         temp.hardest = levels.val()[record]
+//                     }
+//                     temp.points += calculatePoints(recordPos)
+//                 })
+//                 playerList.sort((a, b) => (b.points - a.points))
+//             })
+//         }
+//         playerList.push(temp)
+//     })
+// })
+
+// await sleep(200)
+
+// let i = 1
+
+// playerList.forEach(player => {
+//     if (player.points != 0) {
+//         let newPlayer = document.createElement("div")
+//         if (i % 2 == 0) {
+//             newPlayer.classList.add("player-container-2")
+//         } else {
+//             newPlayer.classList.add("player-container-1")
+//         }
+
+//         newPlayer.addEventListener("click", () => {
+//             completionsList.innerHTML = ""
+//             playerPos = playerList.indexOf(player)
+//             playerName.innerHTML = playerList[playerPos].name
+//             hardestText.innerHTML = player.hardest.name
+//             pointsText.innerHTML = (player.points).toFixed(2)
+//             let records = Object.values(player.records)
+//             records.forEach(record => {
+//                 if (record.first == true) {
+//                     completionsList.innerHTML += `
+//                     <li><a href="${record.video}"><h2 id="first">${record.name}</h2></a></li>
+//                     `
+//                 }else{
+//                     completionsList.innerHTML += `
+//                     <li><a href="${record.video}"><h2>${record.name}</h2></a></li>
+//                     `
+//                 }
+                
+//             })
+//         })
+
+//         newPlayer.innerHTML =
+//             `
+//                 <h2>${"#" + i + " - " + player.name}</h2>
+//                 <h3>${(player.points).toFixed(2)}</h3>
+//             `
+
+//         player.element = newPlayer
+//         leaderboard.append(newPlayer)
+//     }
+//     i++
+// })
+
+// await sleep(200)
+
+// let player = playerList[0]
+// completionsList.innerHTML = ""
+// playerPos = playerList.indexOf(player)
+// playerName.innerHTML = playerList[playerPos].name
+// hardestText.innerHTML = player.hardest.name
+// pointsText.innerHTML = player.points.toFixed(2)
+// let records = Object.values(player.records)
+// records.forEach(record => {
+//     if (record.first == true) {
+//         completionsList.innerHTML += `
+//         <li><a href="${record.video}"><h2 id="first">${record.name}</h2></a></li>
+//         `
+//     }else{
+//         completionsList.innerHTML += `
+//         <li><a href="${record.video}"><h2>${record.name}</h2></a></li>
+//         `
+//     }
+// })
