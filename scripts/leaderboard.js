@@ -129,8 +129,8 @@ playerSearch.addEventListener("input", e => {
     })
 })
 
-console.log(playerList)
-console.log(levelsList)
+// console.log(playerList)
+// console.log(levelsList)
 
 completionsList.innerHTML = ""
 playerName.innerHTML = playerList[playerPos].name
