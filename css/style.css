@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 
 #levels-container{
     display: flex;
@@ -60,16 +60,20 @@
     top: 20px;
 }
 
-@media only screen and (max-width: 650px) {
+@media only screen and (max-width: 750px) {
     .level-container{
-        width: 370px;
+        width: 80%;
+        height: 110px;
     }
     .level-name{
-        font-size: 25px;
+        font-size: 15px;
+    }
+    .level-creator{
+        font-size: 15px;
     }
     .level-img{
-        width: 150px;
-        height: 84.38px;
+        width: 100px;
+        height: 56px;
     }
     #logo{
         font-size: 20px;
