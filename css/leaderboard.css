@@ -10,7 +10,7 @@
 
 #statsViewer{
     margin-top: 20px;
-    width: 700px;
+    width: 600px;
     height: 700px;
     border: rgba(255, 255, 255, 0.432);
     border-width: 1px;
@@ -32,7 +32,7 @@
 
 #leaderboard{
     margin-top: 20px;
-    width: 500px;
+    width: 90%;
     height: 600px;
     background-color: rgba(0, 0, 0, 0.158);
     display: flex;
@@ -54,7 +54,7 @@
 
 #userStats{
     margin-top: 20px;
-    width: 700px;
+    width: 600px;
     height: 700px;
     border: rgba(255, 255, 255, 0.432);
     border-width: 1px;
@@ -205,7 +205,7 @@
         padding: 10px;
     }
     #statsViewer{
-        width: 100%;
+        width: 95%;
     }
     #leaderboard{
         width: 90%;
@@ -217,12 +217,21 @@
         font-size: 20px;
     }
     #userStats{
-        width: 100%;
+        width: 90%;
     }
     #userStats h1{
         font-size: 30px;
     }
     #completions-container{
         gap: 20px;
+    }
+
+    .top-container h2{
+        font-size: 25px;
+        height: auto;
+    }
+
+    #players-list div h2{
+        font-size: 20px;
     }
   }
