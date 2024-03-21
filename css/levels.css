@@ -70,7 +70,7 @@
 }
 
 #victors-container{
-    width: 75%;
+    width: 90%;
     height: 75%;
     border: rgba(255, 255, 255, 0.432);
     border-width: 1px;
@@ -127,7 +127,7 @@
 @media only screen and (max-width: 750px) {
 
     .container{
-        width: 80%;
+        width: 95%;
     }
     #level-video{
         position: relative;
