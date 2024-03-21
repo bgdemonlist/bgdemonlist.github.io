@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap');
+
+#level-section{
+    display: flex;
+    flex-direction:row;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+.container{
+    margin-top: 20px;
+    width: 700px;
+    height: 700px;
+    border: rgba(255, 255, 255, 0.432);
+    border-width: 1px;
+    border-style: dashed;
+    display: flex;
+    box-shadow: 0 0 15px;
+    align-items: center;
+    flex-direction: column;
+}
+
+.titles{
+    position: relative;
+    font-family: 'Montserrat', sans-serif;
+    color: #edf0f1;
+    font-size: 50px;
+    margin: 15px;
+    text-align: center;
+}
+
+.sub-title{
+    position: relative;
+    font-family: 'Montserrat', sans-serif;
+    color: #edf0f19b;
+    font-size: 25px;
+    font-style: italic;
+    margin-bottom: 20px;
+    font-weight: 100;
+    text-align: center;
+}
+
+#level-video{
+    position: relative;
+    height: 300px;
+    width: 533.33px;
+    border: none;
+}
+
+#score-text{
+    position: relative;
+    font-family: 'Montserrat', sans-serif;
+    color: #edf0f1;
+    font-size: 30px;
+    margin: 15px;
+    margin-top: 50px;
+    text-align: center;
+}
+
+#score{
+    position: relative;
+    font-family: 'Montserrat', sans-serif;
+    color: #edf0f1;
+    font-size: 30px;
+    margin: 15px;
+    font-weight: 100;
+    text-align: center;
+}
+
+#victors-container{
+    width: 75%;
+    height: 75%;
+    border: rgba(255, 255, 255, 0.432);
+    border-width: 1px;
+    border-style: dashed;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    overflow: scroll;
+    overflow-x: hidden;
+}
+
+#victors-container a{
+    align-items: center;
+    justify-content: center;
+    display: flex;
+    text-align: center;
+}
+
+#victors-container a:first-of-type{
+    background-color: #ffffff25;
+    width: 100%;
+    
+}
+
+#victors-title{
+    height: 80px;
+    width: 100%;
+    background-color: #212125;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#victors-title h2{
+    position: relative;
+    font-family: 'Montserrat', sans-serif;
+    color: #edf0f1;
+    font-size: 30px;
+    font-weight: 100;
+    text-align: center;
+}
+
+.victor{
+    position: relative;
+    font-family: 'Montserrat', sans-serif;
+    color: #edf0f1;
+    font-size: 30px;
+    font-weight: 100;
+    margin: 20px;
+    cursor: pointer;
+    text-align: center;
+}
+
+@media only screen and (max-width: 750px) {
+
+    .container{
+        width: 80%;
+    }
+    #level-video{
+        position: relative;
+        height: 150px;
+        width: 266.66px;
+        border: none;
+    }
+    .titles{
+        font-size: 40px;
+    }
+
+    .sub-title{
+        font-size: 20px;
+    }
+
+    #score, #score-text{
+        font-size: 25px;
+    }
+
+    .victor{
+        font-size: 25px;
+    }
+
+    #victors-title{
+        font-size: 20px;
+    }
+  }
