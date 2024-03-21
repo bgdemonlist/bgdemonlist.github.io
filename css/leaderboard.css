@@ -2,9 +2,8 @@
 
 #mainContainer{
     display: flex;
-    justify-content: center;
+    justify-content: space-around;
     padding-top: 100px;
-    gap: 50px;
     flex-wrap: wrap;
 }
 
