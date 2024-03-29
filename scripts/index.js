@@ -21,14 +21,18 @@ const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 
 const levelSection = document.getElementById("levels-container")
+const levelSearch = document.getElementById("level-search")
+let levelsList = [];
 
 
-get(query(ref(db, "levels"), orderByChild('pos')))
+await get(query(ref(db, "levels"), orderByChild('pos')))
   .then((snapshot) => {
     snapshot.forEach(child => {
+      let temp = child.val();
       let levelContainer = document.createElement("div")
       levelContainer.classList.add("level-container")
       levelSection.append(levelContainer)
+      temp.element = levelContainer
 
       let levelImage = document.createElement("img")
       levelImage.classList.add("level-img")
@@ -56,5 +60,16 @@ get(query(ref(db, "levels"), orderByChild('pos')))
       levelCreator.innerHTML = child.val().creator
       levelCreator.classList.add("level-creator")
       textContainer.append(levelCreator)
+
+      levelsList.push(temp);
     })
   })
+
+
+levelSearch.addEventListener("input", e => {
+  const value = e.target.value.toLowerCase()
+  levelsList.forEach(level => {
+      const isVisible = level.name.toLowerCase().includes(value)
+      level.element.classList.toggle("hide", !isVisible)
+  })
+})
