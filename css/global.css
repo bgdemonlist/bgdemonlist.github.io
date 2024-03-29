@@ -6,6 +6,10 @@
     padding: 0;
 }
 
+.hide{
+    display: none;
+}
+
 html, body{
     margin: 0;
     height: 100%;
