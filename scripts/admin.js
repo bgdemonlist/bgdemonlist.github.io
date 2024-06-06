@@ -192,11 +192,18 @@ addPopupForm.addEventListener("submit", (event)=>{
   const name = document.getElementById("add-popup-name").value
   const creator = document.getElementById("add-popup-creator").value
   const video = document.getElementById("add-popup-video").value
-  const pos = document.getElementById("add-popup-pos").value
+  const pos = parseInt(document.getElementById("add-popup-pos").value)
 
   if(pos!=""){
 
-    for(let i=pos-1;i<levelsList.length;i++){
+    set(ref(db, 'levels/' + name.toLowerCase()), {
+      name: name,
+      creator: creator,
+      video: video,
+      pos: parseInt(pos)
+    })
+
+    for(let i=levelsList.length-1;i>pos;i--){
 
       set(ref(db, 'levels/' + levelsList[i].name.toLowerCase()), {
             name: levelsList[i].name,
@@ -205,13 +212,14 @@ addPopupForm.addEventListener("submit", (event)=>{
             pos: levelsList[i].pos+1
           })
     }
-
-    set(ref(db, 'levels/' + name.toLowerCase()), {
-      name: name,
-      creator: creator,
-      video: video,
-      pos: parseInt(pos)
-    })
+    // for(let i=levelsList.length-1;i>=level.val().pos;i--){
+    //   set(ref(db, 'levels/' + levelsList[i].name.toLowerCase()), {
+    //     name: levelsList[i].name,
+    //     creator: levelsList[i].creator,
+    //     video: levelsList[i].video,
+    //     pos: levelsList[i].pos-1
+    //   })
+    // }
   }
 })
 
