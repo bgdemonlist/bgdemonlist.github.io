@@ -16,9 +16,29 @@ const firebaseConfig = {
     appId: "1:580475986041:web:82cc42325c06f6aa8f34a8"
 };
 
+
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth();
+const ul = document.getElementById("nav_links");
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+      const uid = user.uid;
+      ul.innerHTML = 
+      `
+      <li><a href="admin.html">Admin</a></li>
+      <li><a href="leaderboard.html">Leaderboard</a></li>
+      `
+      console.log("signed in")
+    } else {
+        ul.innerHTML = 
+        `
+        <li><a href="leaderboard.html">Leaderboard</a></li>
+        `
+        console.log("not signed in")
+    }
+  });
 
 function calculatePoints(pos){
     if(pos<=12){

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta http-equiv="X-UA-Compatible" content="IE=edge">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>BG Demon List</title>
+	<link rel="stylesheet" href="css/admin.css">
+	<link rel="stylesheet" href="css/global.css">
+	<script src="scripts/admin.js" type="module"></script>
+	<script src="scripts/global.js" type="module"></script>
+	<script src="https://kit.fontawesome.com/811caf8c84.js" crossorigin="anonymous"></script>
+</head>
+<body>
+	<div id="black-screen">
+		<div id="add-popup">
+			<div id="add-popup-top">
+				<h1>Add Level</h1>
+				<i class="fa-solid fa-x" id="add-popup-close"></i>
+			</div>
+
+			<form id="add-popup-bottom">
+				<input id="add-popup-name" placeholder="Level Name...">
+				<input id="add-popup-creator" placeholder="Creator Name...">
+				<input id="add-popup-video" placeholder="Video Link...">
+				<input id="add-popup-pos" placeholder="Posiiton..." type="number" min="1">
+				<button>Submit</button>
+			
+			</form>
+
+		</div>
+		<div id="remove-popup">
+			<div id="remove-popup-top">
+				<h1>Remove Level</h1>
+				<i class="fa-solid fa-x" id="remove-popup-close"></i>
+			</div>
+
+			<form id="remove-popup-bottom">
+				<input id="remove-popup-input" placeholder="Level Name...">
+				<div id="remove-popup-cookies">
+					<div id="remove-popup-cookies-div">
+					</div>
+					
+				</div>
+				<button>Submit</button>
+			
+			</form>
+
+		</div>
+	</div>
+	<header>
+		<h3 id="logo"><a href="https://bgdemonlist.github.io/">BDL</a></h3>
+		<nav>
+			<ul id="nav_links">
+				<li><a href="leaderboard.html">Leaderboard</a></li>
+			</ul>
+		</nav>
+	</header>
+	<section id="levels-container">
+		<div id="search-change-div">
+			<div id="search-bar">
+				<i class="fa-solid fa-magnifying-glass"></i>
+				<input placeholder="Search..." id="level-search">
+			</div>
+			<div id="add-remove-div">
+				<i class="fa-solid fa-plus" id="plus"></i>
+				<i class="fa-solid fa-minus" id="minus"></i>
+			</div>
+			
+		</div>
+		<div id="levels-container-div"></div>
+	</section>
+</body>
+</html>

@@ -1,7 +1,7 @@
 // Import the functions you need from the SDKs you need
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove, query, orderByKey, orderByChild, orderByValue, get } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"
-import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -19,6 +19,27 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth();
+
+const ul = document.getElementById("nav_links");
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    const uid = user.uid;
+    ul.innerHTML = 
+    `
+    <li><a href="admin.html">Admin</a></li>
+    <li><a href="leaderboard.html">Leaderboard</a></li>
+    `
+    console.log("signed in")
+  } else {
+      ul.innerHTML = 
+      `
+      <li><a href="leaderboard.html">Leaderboard</a></li>
+      `
+      console.log("not signed in")
+  }
+});
 
 const levelSection = document.getElementById("levels-container")
 const levelSearch = document.getElementById("level-search")

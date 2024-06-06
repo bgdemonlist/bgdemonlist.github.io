@@ -17,8 +17,28 @@ const firebaseConfig = {
 };
 
 
+
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
+const auth = getAuth();
+const ul = document.getElementById("nav_links");
+onAuthStateChanged(auth, (user) => {
+    if (user) {
+      const uid = user.uid;
+      ul.innerHTML = 
+      `
+      <li><a href="admin.html">Admin</a></li>
+      <li><a href="leaderboard.html">Leaderboard</a></li>
+      `
+      console.log("signed in")
+    } else {
+        ul.innerHTML = 
+        `
+        <li><a href="leaderboard.html">Leaderboard</a></li>
+        `
+        console.log("not signed in")
+    }
+  });
 
 const leaderboard = document.getElementById("players-list")
 const userStats = document.getElementById("userStats")
