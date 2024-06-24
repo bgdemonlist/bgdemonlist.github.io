@@ -57,11 +57,13 @@ const removePopup = document.getElementById("remove-popup")
 const addPopupExit = document.getElementById("add-popup-close")
 const removePopupExit = document.getElementById("remove-popup-close")
 let levelsList = [];
-
+let levelsAlreadyGenerated = false;
 
 onValue(query(ref(db, "levels"), orderByChild('pos')), snapshot=>{
   levelSectionDiv.innerHTML = ""
+  document.getElementById("remove-popup-cookies-div").innerHTML = ""
   snapshot.forEach(child => {
+    // levelsList = [];
     let temp = child.val();
     let levelContainer = document.createElement("div")
     levelContainer.classList.add("level-container")
@@ -99,50 +101,55 @@ onValue(query(ref(db, "levels"), orderByChild('pos')), snapshot=>{
     levelControls.classList.add("level-controls")
     levelContainer.append(levelControls)
 
-    let upArrow = document.createElement("i")
-    upArrow.classList.add("fa-solid")
-    upArrow.classList.add("fa-angle-up")
-    upArrow.addEventListener("click", ()=>{
-      set(ref(db, 'levels/' + child.val().name.toLowerCase()), {
-        name: child.val().name,
-        creator: child.val().creator,
-        video: child.val().video,
-        pos: child.val().pos-1
+    if(child.val().pos>1){
+      let upArrow = document.createElement("i")
+      upArrow.classList.add("fa-solid")
+      upArrow.classList.add("fa-angle-up")
+      upArrow.addEventListener("click", ()=>{
+        set(ref(db, 'levels/' + child.val().name.toLowerCase()), {
+          name: child.val().name,
+          creator: child.val().creator,
+          video: child.val().video,
+          pos: child.val().pos-1
+        })
+        set(ref(db, 'levels/' + levelsList[child.val().pos-2].name.toLowerCase()), {
+          name: levelsList[child.val().pos-2].name,
+          creator: levelsList[child.val().pos-2].creator,
+          video: levelsList[child.val().pos-2].video,
+          pos: child.val().pos
+        })
+        let templ = levelsList[child.val().pos-2];
+        levelsList[child.val().pos-2] = levelsList[child.val().pos-1];
+        levelsList[child.val().pos-1] = templ;
       })
-      set(ref(db, 'levels/' + levelsList[child.val().pos-2].name.toLowerCase()), {
-        name: levelsList[child.val().pos-2].name,
-        creator: levelsList[child.val().pos-2].creator,
-        video: levelsList[child.val().pos-2].video,
-        pos: child.val().pos
+      levelControls.append(upArrow)
+    }
+    
+    if(child.val().pos<Object.keys(snapshot.val()).length){
+      let downArrow = document.createElement("i")
+      downArrow.classList.add("fa-solid")
+      downArrow.classList.add("fa-angle-down")
+      downArrow.addEventListener("click", ()=>{
+        set(ref(db, 'levels/' + child.val().name.toLowerCase()), {
+          name: child.val().name,
+          creator: child.val().creator,
+          video: child.val().video,
+          pos: child.val().pos+1
+        })
+        set(ref(db, 'levels/' + levelsList[child.val().pos].name.toLowerCase()), {
+          name: levelsList[child.val().pos].name,
+          creator: levelsList[child.val().pos].creator,
+          video: levelsList[child.val().pos].video,
+          pos: child.val().pos
+        })
+        let templ = levelsList[child.val().pos];
+        levelsList[child.val().pos] = levelsList[child.val().pos-1];
+        levelsList[child.val().pos-1] = templ;
       })
-      let templ = levelsList[child.val().pos-2];
-      levelsList[child.val().pos-2] = levelsList[child.val().pos-1];
-      levelsList[child.val().pos-1] = templ;
-    })
-    levelControls.append(upArrow)
-
-    let downArrow = document.createElement("i")
-    downArrow.classList.add("fa-solid")
-    downArrow.classList.add("fa-angle-down")
-    downArrow.addEventListener("click", ()=>{
-      set(ref(db, 'levels/' + child.val().name.toLowerCase()), {
-        name: child.val().name,
-        creator: child.val().creator,
-        video: child.val().video,
-        pos: child.val().pos+1
-      })
-      set(ref(db, 'levels/' + levelsList[child.val().pos].name.toLowerCase()), {
-        name: levelsList[child.val().pos].name,
-        creator: levelsList[child.val().pos].creator,
-        video: levelsList[child.val().pos].video,
-        pos: child.val().pos
-      })
-      let templ = levelsList[child.val().pos];
-      levelsList[child.val().pos] = levelsList[child.val().pos-1];
-      levelsList[child.val().pos-1] = templ;
-    })
-    levelControls.append(downArrow)
-
+      levelControls.append(downArrow)
+    }
+    
+    
 
     let cookie = document.createElement("h3");
     cookie.addEventListener("click", ()=>{
@@ -150,7 +157,9 @@ onValue(query(ref(db, "levels"), orderByChild('pos')), snapshot=>{
     })
     cookie.innerHTML = "<h3>#" + child.val().pos + " - " + child.val().name + "</h3>"
     temp.cookie = cookie;
-    levelsList.push(temp);
+    if(!levelsAlreadyGenerated){
+      levelsList.push(temp);
+    }
     document.getElementById("remove-popup-cookies-div").append(cookie)
     
   })
@@ -194,33 +203,36 @@ addPopupForm.addEventListener("submit", (event)=>{
   const video = document.getElementById("add-popup-video").value
   const pos = parseInt(document.getElementById("add-popup-pos").value)
 
-  if(pos!=""){
-
-    for(let i=levelsList.length-1;i>pos;i--){
-
-      set(ref(db, 'levels/' + levelsList[i].name.toLowerCase()), {
-            name: levelsList[i].name,
-            creator: levelsList[i].creator,
-            video: levelsList[i].video,
-            pos: levelsList[i].pos+1
+  get(ref(db, "levels")).then(levels=>{
+    levels.forEach(level=>{
+      if(level.val().pos>=pos){
+        if(level.val().records){
+          set(ref(db, "levels/" + level.val().name.toLowerCase()), {
+            name: level.val().name,
+            creator: level.val().creator,
+            video: level.val().video,
+            pos: level.val().pos+1,
+            records: level.val().records
           })
-    }
-
-    set(ref(db, 'levels/' + name.toLowerCase()), {
-      name: name,
-      creator: creator,
-      video: video,
-      pos: parseInt(pos)
+        }else{
+          set(ref(db, "levels/" + level.val().name.toLowerCase()), {
+            name: level.val().name,
+            creator: level.val().creator,
+            video: level.val().video,
+            pos: level.val().pos+1
+          })
+        }
+        
+      }
     })
-    // for(let i=levelsList.length-1;i>=level.val().pos;i--){
-    //   set(ref(db, 'levels/' + levelsList[i].name.toLowerCase()), {
-    //     name: levelsList[i].name,
-    //     creator: levelsList[i].creator,
-    //     video: levelsList[i].video,
-    //     pos: levelsList[i].pos-1
-    //   })
-    // }
-  }
+  })
+
+  set(ref(db, "levels/" + name.toLowerCase()), {
+    name: name,
+    creator: creator,
+    video: video,
+    pos: pos
+  })
 })
 
 document.getElementById("remove-popup-input").addEventListener("keyup", e=>{
@@ -237,25 +249,33 @@ removePopupForm.addEventListener("submit", (event)=>{
 
   const name = document.getElementById("remove-popup-input").value
 
-  get(ref(db, "levels/" + name.toLowerCase())).then((level)=>{
-    // console.log(level.val())
-
-    for(let i=levelsList.length-1;i>=level.val().pos;i--){
-      set(ref(db, 'levels/' + levelsList[i].name.toLowerCase()), {
-        name: levelsList[i].name,
-        creator: levelsList[i].creator,
-        video: levelsList[i].video,
-        pos: levelsList[i].pos-1
+  get(ref(db, "levels/" + name.toLowerCase())).then((curr)=>{
+    get(ref(db, "levels")).then(levels=>{
+      levels.forEach(level=>{
+        if(level.val().pos>curr.val().pos){
+          if(level.val().records){
+            set(ref(db, "levels/" + level.val().name.toLowerCase()), {
+              name: level.val().name,
+              creator: level.val().creator,
+              video: level.val().video,
+              pos: level.val().pos-1,
+              records: level.val().records
+            })
+          }else{
+            set(ref(db, "levels/" + level.val().name.toLowerCase()), {
+              name: level.val().name,
+              creator: level.val().creator,
+              video: level.val().video,
+              pos: level.val().pos-1
+            })
+          }
+          
+        }
       })
-    }
-    if(level.val().records){
-      const records = Object.values(level.val().records)
-      records.forEach(record=>{
-        remove(ref(db, 'users/'+record.name+'/records/'+name.toLowerCase()))
-      })
-    }
+    })
+  }).then(remove(ref(db, 'levels/' + name.toLowerCase())))
 
-  })
+  
 
-  remove(ref(db, 'levels/' + name.toLowerCase()))
+  
 })
