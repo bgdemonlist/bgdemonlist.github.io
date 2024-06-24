@@ -196,13 +196,6 @@ addPopupForm.addEventListener("submit", (event)=>{
 
   if(pos!=""){
 
-    set(ref(db, 'levels/' + name.toLowerCase()), {
-      name: name,
-      creator: creator,
-      video: video,
-      pos: parseInt(pos)
-    })
-
     for(let i=levelsList.length-1;i>pos;i--){
 
       set(ref(db, 'levels/' + levelsList[i].name.toLowerCase()), {
@@ -212,6 +205,13 @@ addPopupForm.addEventListener("submit", (event)=>{
             pos: levelsList[i].pos+1
           })
     }
+
+    set(ref(db, 'levels/' + name.toLowerCase()), {
+      name: name,
+      creator: creator,
+      video: video,
+      pos: parseInt(pos)
+    })
     // for(let i=levelsList.length-1;i>=level.val().pos;i--){
     //   set(ref(db, 'levels/' + levelsList[i].name.toLowerCase()), {
     //     name: levelsList[i].name,
