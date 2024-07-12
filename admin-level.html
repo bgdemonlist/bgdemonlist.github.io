@@ -5,12 +5,29 @@
 	<meta http-equiv="X-UA-Compatible" content="IE=edge">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>BG Demon List</title>
-	<link rel="stylesheet" href="css/levels.css">
+	<link rel="stylesheet" href="css/admin-level.css">
     <link rel="stylesheet" href="css/global.css">
     <script src="scripts/global.js" type="module"></script>
-    <script src="scripts/levels.js" type="module"></script>
+    <script src="scripts/admin-level.js" type="module"></script>
+    <script src="https://kit.fontawesome.com/811caf8c84.js" crossorigin="anonymous"></script>
 </head>
 <body>
+    <div id="black-screen">
+        <div id="add-popup">
+			<div id="add-popup-top">
+				<h1>Add Record</h1>
+				<i class="fa-solid fa-x" id="add-popup-close"></i>
+			</div>
+
+			<form id="add-popup-bottom">
+				<input id="add-popup-name" placeholder="Holder Name...">
+				<input id="add-popup-video" placeholder="Video Link...">
+				<button>Submit</button>
+			
+			</form>
+
+		</div>
+    </div>
 	<header>
 		<h3 id="logo"><a href="https://bgdemonlist.github.io/">BDL</a></h3>
 		<nav>
@@ -29,6 +46,9 @@
         </div>
         <div class="container">
             <h2 class="titles">Victors</h2>
+            <div id="add-remove-div">
+                <i class="fa-solid fa-plus" id="plus"></i>
+            </div>
             <p class="sub-title" id="victor-count"></p>
             <div id="victors-container">
                 <div id="victors-title">

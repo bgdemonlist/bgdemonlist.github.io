@@ -106,18 +106,40 @@ onValue(query(ref(db, "levels"), orderByChild('pos')), snapshot=>{
       upArrow.classList.add("fa-solid")
       upArrow.classList.add("fa-angle-up")
       upArrow.addEventListener("click", ()=>{
-        set(ref(db, 'levels/' + child.val().name.toLowerCase()), {
-          name: child.val().name,
-          creator: child.val().creator,
-          video: child.val().video,
-          pos: child.val().pos-1
-        })
-        set(ref(db, 'levels/' + levelsList[child.val().pos-2].name.toLowerCase()), {
-          name: levelsList[child.val().pos-2].name,
-          creator: levelsList[child.val().pos-2].creator,
-          video: levelsList[child.val().pos-2].video,
-          pos: child.val().pos
-        })
+        if(child.val().records){
+          set(ref(db, 'levels/' + child.val().name.toLowerCase()), {
+            name: child.val().name,
+            creator: child.val().creator,
+            video: child.val().video,
+            pos: child.val().pos-1,
+            records: child.val().records
+          })
+        }else{
+          set(ref(db, 'levels/' + child.val().name.toLowerCase()), {
+            name: child.val().name,
+            creator: child.val().creator,
+            video: child.val().video,
+            pos: child.val().pos-1
+          })
+        }
+        
+        if(levelsList[child.val().pos-2].records){
+          set(ref(db, 'levels/' + levelsList[child.val().pos-2].name.toLowerCase()), {
+            name: levelsList[child.val().pos-2].name,
+            creator: levelsList[child.val().pos-2].creator,
+            video: levelsList[child.val().pos-2].video,
+            pos: child.val().pos,
+            records: levelsList[child.val().pos-2].records
+          })
+        }else{
+          set(ref(db, 'levels/' + levelsList[child.val().pos-2].name.toLowerCase()), {
+            name: levelsList[child.val().pos-2].name,
+            creator: levelsList[child.val().pos-2].creator,
+            video: levelsList[child.val().pos-2].video,
+            pos: child.val().pos
+          })
+        }
+        
         let templ = levelsList[child.val().pos-2];
         levelsList[child.val().pos-2] = levelsList[child.val().pos-1];
         levelsList[child.val().pos-1] = templ;
@@ -130,18 +152,39 @@ onValue(query(ref(db, "levels"), orderByChild('pos')), snapshot=>{
       downArrow.classList.add("fa-solid")
       downArrow.classList.add("fa-angle-down")
       downArrow.addEventListener("click", ()=>{
-        set(ref(db, 'levels/' + child.val().name.toLowerCase()), {
-          name: child.val().name,
-          creator: child.val().creator,
-          video: child.val().video,
-          pos: child.val().pos+1
-        })
-        set(ref(db, 'levels/' + levelsList[child.val().pos].name.toLowerCase()), {
-          name: levelsList[child.val().pos].name,
-          creator: levelsList[child.val().pos].creator,
-          video: levelsList[child.val().pos].video,
-          pos: child.val().pos
-        })
+        if(child.val().records){
+          set(ref(db, 'levels/' + child.val().name.toLowerCase()), {
+            name: child.val().name,
+            creator: child.val().creator,
+            video: child.val().video,
+            pos: child.val().pos+1,
+            records: child.val().records
+          })
+        }else{
+          set(ref(db, 'levels/' + child.val().name.toLowerCase()), {
+            name: child.val().name,
+            creator: child.val().creator,
+            video: child.val().video,
+            pos: child.val().pos+1
+          })
+        }
+        if(levelsList[child.val().pos].records){
+          set(ref(db, 'levels/' + levelsList[child.val().pos].name.toLowerCase()), {
+            name: levelsList[child.val().pos].name,
+            creator: levelsList[child.val().pos].creator,
+            video: levelsList[child.val().pos].video,
+            pos: child.val().pos,
+            records: levelsList[child.val().pos].video
+          })
+        }else{
+          set(ref(db, 'levels/' + levelsList[child.val().pos].name.toLowerCase()), {
+            name: levelsList[child.val().pos].name,
+            creator: levelsList[child.val().pos].creator,
+            video: levelsList[child.val().pos].video,
+            pos: child.val().pos
+          })
+        }
+        
         let templ = levelsList[child.val().pos];
         levelsList[child.val().pos] = levelsList[child.val().pos-1];
         levelsList[child.val().pos-1] = templ;
