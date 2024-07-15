@@ -41,6 +41,7 @@ onAuthStateChanged(auth, (user) => {
   });
 
 function calculatePoints(pos){
+    if(pos>150)return 0;
     if(pos<=12){
         return (Math.pow(0.9, pos))*323 + 32.3
     }
