@@ -2,6 +2,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
 import { getDatabase, ref, push, onValue, remove, set, orderByChild, orderByKey, query, get } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"
 import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+import { ref as sRef,getStorage, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js";
 // TODO: Add SDKs for Firebase products that you want to use
 // https://firebase.google.com/docs/web/setup#available-libraries
 
@@ -21,6 +22,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const db = getDatabase(app);
 const auth = getAuth();
+const storage = getStorage();
 const ul = document.getElementById("nav_links");
 onAuthStateChanged(auth, (user) => {
     if (user) {
@@ -42,6 +44,7 @@ onAuthStateChanged(auth, (user) => {
 
 const leaderboard = document.getElementById("players-list")
 const userStats = document.getElementById("userStats")
+const playerIcon = document.getElementById("player-icon")
 const playerSearch = document.getElementById("player-search")
 const playerName = document.getElementById("player-name")
 const hardestText = document.getElementById("hardest-text")
@@ -128,6 +131,12 @@ await playerList.forEach(player => {
                 }
                 
             })
+
+            getDownloadURL(sRef(storage, `player-icons/${playerList[playerPos].name}.jpg`)).then(url=>{
+                playerIcon.src = url
+            }).catch(e=>getDownloadURL(sRef(storage, 'player-icons/default-user-icon.png')).then(url=>{
+                playerIcon.src = url
+            }))
         })
 
         newPlayer.innerHTML =
@@ -170,7 +179,11 @@ records.forEach(record => {
     }
                 
 })
-
+getDownloadURL(sRef(storage, `player-icons/${playerList[playerPos].name}.jpg`)).then(url=>{
+    playerIcon.src = url
+}).catch(e=>getDownloadURL(sRef(storage, 'player-icons/default-user-icon.png')).then(url=>{
+    playerIcon.src = url
+}))
 
 
 // await get(ref(db, "users")).then(users => {
