@@ -58,7 +58,8 @@ await get(query(ref(db, "levels"), orderByChild('pos')))
       let levelImage = document.createElement("img")
       levelImage.classList.add("level-img")
       let videoId = child.val().video.substr(17)
-      let image = "https://img.youtube.com/vi/" + videoId + "/maxresdefault.jpg"
+      videoId = videoId.slice(0, 17)
+      let image = "https://img.youtube.com/vi/" + videoId + "/mqdefault.jpg"
       levelImage.src = image
       levelContainer.append(levelImage)
       levelImage.addEventListener("click", function () {
