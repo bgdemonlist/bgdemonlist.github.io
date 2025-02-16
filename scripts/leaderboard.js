@@ -63,14 +63,8 @@ function getPosFromLevelName(name){
     }
 }
 
-function calculatePoints(pos){
-    if(pos>150)return 0;
-    if(pos<=12){
-        return (Math.pow(0.9, pos))*323 + 32.3
-    }
-    else{
-        return Math.pow(1.026, 200-pos)
-    }
+function calculatePoints(pos, n){
+    return 1 + 322 * Math.exp(-((Math.log(322) / (n - 1)) * (pos - 1)));
 }
 
 await get(ref(db, "users")).then(users => {
@@ -95,7 +89,7 @@ await playerList.forEach(player=>{
         if(getPosFromLevelName(value.name)<getPosFromLevelName(player.hardest.name)){
             player.hardest = value
         }
-        player.points+=calculatePoints(getPosFromLevelName(value.name))
+        player.points+=calculatePoints(getPosFromLevelName(value.name), levelsList.length)
     })
 })
 
