@@ -16,6 +16,7 @@
     border-style: dashed;
     display: flex;
     box-shadow: 0 0 15px;
+    overflow: hidden;
 }
 
 .level-img{
