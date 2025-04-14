@@ -55,7 +55,7 @@
 #userStats{
     margin-top: 20px;
     width: 600px;
-    height: 700px;
+    min-height: 700px;
     border: rgba(255, 255, 255, 0.432);
     border-width: 1px;
     border-style: dashed;
@@ -183,7 +183,6 @@
     font-family: 'Montserrat', sans-serif;
     font-size: 17px;
     font-style: italic;
-    text-decoration: underline;
 }
 
 .completions-title{
@@ -194,7 +193,7 @@
 
 #completions-list li{
     font-family: 'Montserrat', sans-serif;
-    color: rgb(209, 209, 209);
+    color: rgb(105, 105, 105);
     text-align: center;
     font-size: 17px;
     align-items: center;
@@ -204,10 +203,11 @@
 }
 
 #first{
-    color: rgba(0,136,169,1);
+    color: white;
     font-family: 'Montserrat', sans-serif;
     font-size: 17px;
     font-style: normal;
+    font-weight: 800;
     
 }
 
