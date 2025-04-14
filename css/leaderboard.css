@@ -182,7 +182,6 @@
     color: rgb(199, 199, 199);
     font-family: 'Montserrat', sans-serif;
     font-size: 17px;
-    margin: 5px;
     font-style: italic;
     text-decoration: underline;
 }
@@ -191,6 +190,17 @@
     color: white;
     font-family: 'Montserrat', sans-serif;
     font-size: 30px;
+}
+
+#completions-list li{
+    font-family: 'Montserrat', sans-serif;
+    color: rgb(209, 209, 209);
+    text-align: center;
+    font-size: 17px;
+    align-items: center;
+    justify-content: center;
+    font-size: 17px;
+    padding: 2px 3px;
 }
 
 #first{
