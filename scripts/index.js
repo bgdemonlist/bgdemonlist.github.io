@@ -45,6 +45,11 @@ const levelSection = document.getElementById("levels-container")
 const levelSearch = document.getElementById("level-search")
 let levelsList = [];
 
+function getYouTubeVideoId(url) {
+  const regex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
+  const match = url.match(regex);
+  return match ? match[1] : null;
+}
 
 await get(query(ref(db, "levels"), orderByChild('pos')))
   .then((snapshot) => {
@@ -57,7 +62,7 @@ await get(query(ref(db, "levels"), orderByChild('pos')))
 
       let levelImage = document.createElement("img")
       levelImage.classList.add("level-img")
-      let videoId = child.val().video.substr(17)
+      let videoId = getYouTubeVideoId(child.val().video)
       videoId = videoId.slice(0, 17)
       let image = "https://img.youtube.com/vi/" + videoId + "/mqdefault.jpg"
       levelImage.src = image
