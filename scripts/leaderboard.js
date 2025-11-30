@@ -30,12 +30,14 @@ onAuthStateChanged(auth, (user) => {
       ul.innerHTML = 
       `
       <li><a href="admin.html">Admin</a></li>
+      <li><a href="roulette.html">Roulette</a></li>
       <li><a href="leaderboard.html">Leaderboard</a></li>
       `
       console.log("signed in")
     } else {
         ul.innerHTML = 
         `
+        <li><a href="roulette.html">Roulette</a></li>
         <li><a href="leaderboard.html">Leaderboard</a></li>
         `
         console.log("not signed in")

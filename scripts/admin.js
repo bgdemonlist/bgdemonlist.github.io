@@ -41,6 +41,7 @@ onAuthStateChanged(auth, (user) => {
   if (user) {
     ul.innerHTML = `
       <li><a href="admin.html">Admin</a></li>
+      <li><a href="roulette.html">Roulette</a></li>
       <li><a href="leaderboard.html">Leaderboard</a></li>
     `;
     console.log("signed in");
@@ -48,6 +49,7 @@ onAuthStateChanged(auth, (user) => {
     const password = prompt("Enter password");
     signInWithEmailAndPassword(auth, "pishka@gmail.com", password);
     ul.innerHTML = `
+      <li><a href="roulette.html">Roulette</a></li>
       <li><a href="leaderboard.html">Leaderboard</a></li>
     `;
     console.log("not signed in");

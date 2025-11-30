@@ -1,0 +1,239 @@
+  #roulette-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-height: 80vh;
+    padding-top: 50px;
+    padding-bottom: 50px;
+}
+
+#roulette-container h1 {
+    font-family: 'Montserrat', sans-serif;
+    color: white;
+    margin-bottom: 10px;
+    text-transform: uppercase;
+}
+
+#roulette-container p {
+    color: #ccc;
+    font-family: 'Montserrat', sans-serif;
+    margin-bottom: 30px;
+}
+
+.hide {
+    display: none !important;
+}
+
+/* --- Start Screen --- */
+#start-btn {
+    padding: 15px 50px;
+    font-size: 24px;
+    font-family: 'Montserrat', sans-serif;
+    font-weight: bold;
+    background-color: #27ae60;
+    color: white;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    box-shadow: 0 0 15px rgba(39, 174, 96, 0.5);
+    transition: 0.2s;
+    margin-bottom: 20px; /* Space above load controls */
+}
+#start-btn:hover { background-color: #2ecc71; transform: scale(1.05); }
+#start-btn:disabled { background-color: #555; cursor: wait; box-shadow: none; }
+
+/* NEW: Load Controls */
+.load-controls #load-btn {
+    padding: 10px 20px;
+    font-size: 16px;
+    font-family: 'Montserrat', sans-serif;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+}
+.load-controls #load-btn:hover { background-color: #2980b9; }
+.load-controls #load-btn:disabled { background-color: #555; cursor: wait; }
+
+/* --- Game Screen --- */
+#game-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+}
+
+.status-bar {
+    display: flex;
+    gap: 40px;
+    margin-bottom: 20px;
+}
+
+.status-item {
+    font-family: 'Montserrat', sans-serif;
+    color: white;
+    font-size: 24px;
+    font-weight: bold;
+}
+.status-item span { color: #f1c40f; }
+
+/* Active Level Card */
+.level-container.active-card {
+    flex-direction: column;
+    height: auto;
+    padding: 20px;
+    align-items: center;
+    text-align: center;
+    margin-bottom: 30px;
+    animation: popIn 0.3s ease;
+}
+
+.level-container.active-card .level-img {
+    margin: 0 0 15px 0;
+    top: 0;
+    transform: none;
+    width: 300px; /* Larger image for active card */
+    height: 168px;
+}
+
+.level-container.active-card .level-text-container { top: 0; }
+
+/* Input Area */
+.input-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-area label {
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+}
+
+.input-group {
+    display: flex;
+    gap: 10px;
+}
+
+#percent-input {
+    padding: 10px;
+    font-size: 20px;
+    border-radius: 5px;
+    border: none;
+    width: 100px;
+    text-align: center;
+    outline: none;
+}
+
+#submit-btn {
+    padding: 10px 20px;
+    background-color: #3498db;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    font-size: 18px;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+}
+#submit-btn:hover { background-color: #2980b9; }
+
+/* Game Actions (Save/Give Up) */
+.game-actions {
+    display: flex;
+    gap: 10px;
+}
+
+#give-up-btn {
+    margin-top: 10px;
+    background: none;
+    border: 1px solid #c0392b;
+    color: #c0392b;
+    padding: 5px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+}
+#give-up-btn:hover { background-color: #c0392b; color: white; }
+
+/* NEW: Save Button Style */
+#save-btn {
+    margin-top: 10px;
+    background: none;
+    border: 1px solid #9b59b6;
+    color: #9b59b6;
+    padding: 5px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-family: 'Montserrat', sans-serif;
+}
+#save-btn:hover { background-color: #9b59b6; color: white; }
+
+
+/* --- Results List (Card View) --- */
+#results-section {
+    margin-top: 50px;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#results-section h3 {
+    color: white;
+    font-family: 'Montserrat', sans-serif;
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+#results-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    width: 100%;
+    align-items: center;
+}
+
+.level-container.result-card {
+    height: 120px;
+    width: 700px;
+    max-width: 90%;
+    display: flex;
+    flex-direction: row; 
+    align-items: center;
+    justify-content: flex-start; 
+    padding: 0;
+    margin: 0;
+    background-color: rgba(0, 0, 0, 0.3);
+}
+
+.level-container.result-card .level-img {
+    height: 80px; 
+    width: 142px;
+    margin: 0 20px; 
+    top: 0;
+    transform: none; 
+    box-shadow: 0 0 5px rgba(0,0,0,0.5);
+}
+
+.level-container.result-card .level-img:hover {
+    transform: none;
+    top: 0;
+}
+
+.level-container.result-card .level-text-container {
+    top: 0;
+    text-align: left;
+}
+
+.result-percent {
+    color: #7f8c8d; 
+    font-weight: normal;
+    margin-left: 10px;
+}
+
+@keyframes popIn {
+    0% { transform: scale(0.9); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
