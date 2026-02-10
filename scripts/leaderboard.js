@@ -45,13 +45,13 @@ onAuthStateChanged(auth, (user) => {
   });
 
 const leaderboard = document.getElementById("players-list")
-const userStats = document.getElementById("userStats")
 const playerIcon = document.getElementById("player-icon")
 const playerSearch = document.getElementById("player-search")
 const playerName = document.getElementById("player-name")
 const hardestText = document.getElementById("hardest-text")
 const pointsText = document.getElementById("points-text")
-const firstVictorList = document.getElementById("first-victor-list")
+const rankText = document.getElementById("rank-text")
+const completionsText = document.getElementById("completions-text")
 const completionsList = document.getElementById("completions-list")
 let playerPos = 0
 let playerList = []
@@ -114,6 +114,8 @@ await playerList.forEach(player => {
             playerName.innerHTML = playerList[playerPos].name
             hardestText.innerHTML = player.hardest.name
             pointsText.innerHTML = (player.points).toFixed(2)
+            completionsText.innerHTML = Object.values(playerList[playerPos].records).length + " (" + Object.values(playerList[playerPos].records).filter(record=>record.first==true).length + " FVs)"
+            rankText.innerHTML = "#" + (playerPos+1)
             let records = Object.values(player.records)
             records.forEach((record, index) => {
                 let isLast = index === records.length - 1;
@@ -163,6 +165,8 @@ completionsList.innerHTML = ""
 playerName.innerHTML = playerList[playerPos].name
 hardestText.innerHTML = playerList[playerPos].hardest.name
 pointsText.innerHTML = (playerList[playerPos].points).toFixed(2)
+completionsText.innerHTML = Object.values(playerList[playerPos].records).length + " (" + Object.values(playerList[playerPos].records).filter(record=>record.first==true).length + " FVs)"
+rankText.innerHTML = "#" + (playerPos+1)
 let records = Object.values(playerList[playerPos].records)
 records.forEach((record, index) => {
     let isLast = index === records.length - 1;

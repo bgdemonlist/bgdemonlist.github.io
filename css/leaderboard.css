@@ -83,6 +83,7 @@
 
 #player-name-icon{
     display: flex;
+    flex-wrap: wrap;
     justify-content:space-between;
     align-items: center;
     width: 100%;
@@ -91,9 +92,6 @@
 
 #player-name{
     text-align: center;
-    background-repeat: repeat;
-    background-size: 100%;
-    background-position-y:center ;
 }
 
 #player-icon{
@@ -137,6 +135,7 @@
 #top-stats{
     width: 100%;
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-around;
 }
 
@@ -145,6 +144,7 @@
     flex-direction: column;
     align-items: center;
     width: 250px;
+    padding: 10px;
 }
 
 .top-container h2{
@@ -153,12 +153,14 @@
     font-size: 25px;
     text-align: center;
     font-weight: 800;
-    height: 40px;
+    margin-bottom: 10px;
 }
 
-#hardest-text, #points-text{
-    font-weight: 100;
+#top-stats p{
+    color: white;
+    font-family: 'Montserrat', sans-serif;
     font-size: 20px;
+    text-align: center;
 }
 
 #completions-container{
