@@ -65,8 +65,18 @@ function getPosFromLevelName(name){
     }
 }
 
-function calculatePoints(pos, n){
-    return 1 + 322 * Math.exp(-((Math.log(322) / (n - 1)) * (pos - 1)));
+function calculatePoints(pos){
+//     if p <= 20:
+//     # Steep Elite Curve
+//     points = 322.2 * (0.945**(p-1)) + 0.8
+// else:
+//     # Balanced List Curve
+//     points = 106.2 * (0.9882**(p-20))
+    if(pos<=20){
+        return 322.2 * (0.945**(pos-1)) + 0.8
+    }else if(pos<=400){
+        return 106.2 * (0.9882**(pos-20))
+    }else return 1
 }
 
 await get(ref(db, "users")).then(users => {

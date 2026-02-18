@@ -24,26 +24,30 @@ const auth = getAuth();
 const ul = document.getElementById("nav_links");
 onAuthStateChanged(auth, (user) => {
     if (user) {
-      const uid = user.uid;
-      ul.innerHTML = 
-      `
+        const uid = user.uid;
+        ul.innerHTML =
+            `
       <li><a href="admin.html">Admin</a></li>
       <li><a href="roulette.html">Roulette</a></li>
       <li><a href="leaderboard.html">Leaderboard</a></li>
       `
-      console.log("signed in")
+        console.log("signed in")
     } else {
-        ul.innerHTML = 
-        `
+        ul.innerHTML =
+            `
         <li><a href="roulette.html">Roulette</a></li>
         <li><a href="leaderboard.html">Leaderboard</a></li>
         `
         console.log("not signed in")
     }
-  });
+});
 
-function calculatePoints(pos, n){
-    return 1 + 322 * Math.exp(-((Math.log(322) / (n - 1)) * (pos - 1)));
+function calculatePoints(pos, n) {
+    if (pos <= 20) {
+        return 322.2 * (0.945 ** (pos - 1)) + 0.8
+    } else if (pos <= 400) {
+        return 106.2 * (0.9882 ** (pos - 20))
+    } else return 1
 }
 
 
@@ -91,18 +95,18 @@ get(ref(db, "levels")).then(snapshot => {
             document.getElementById("level-video").src = "https://www.youtube.com/embed/" + levelVid
             let temp = calculatePoints(position, Object.keys(snapshot.val()).length).toFixed(2)
             console.log(Object.keys(snapshot.val()).length)
-            if(temp < 0){
+            if (temp < 0) {
                 temp = 0
             }
             document.getElementById("score").innerHTML = temp
             document.getElementById("victor-count").innerHTML = Object.keys(child.val().records).length + " victors"
             if (child.val().records) {
                 document.getElementById("victors-container").innerHTML = '<div id="victors-title"><h2>Holder</h2></div>'
-                get(query(ref(db, "levels/"+child.val().name.toLowerCase()+"/records"), orderByChild('recordNum'))).then(recordsSnap=>{
-                    recordsSnap.forEach(record=>{
+                get(query(ref(db, "levels/" + child.val().name.toLowerCase() + "/records"), orderByChild('recordNum'))).then(recordsSnap => {
+                    recordsSnap.forEach(record => {
                         console.log(record.val())
                         document.getElementById("victors-container").innerHTML +=
-                    `
+                            `
                     <a href="${record.val().video}"><h2 class="victor">${record.val().name}</h2></a>
                     `
                     })
