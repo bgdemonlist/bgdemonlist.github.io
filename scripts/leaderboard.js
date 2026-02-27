@@ -53,6 +53,8 @@ const pointsText = document.getElementById("points-text")
 const rankText = document.getElementById("rank-text")
 const completionsText = document.getElementById("completions-text")
 const completionsList = document.getElementById("completions-list")
+const playerProvince = document.getElementById("player-province")
+
 let playerPos = 0
 let playerList = []
 let levelsList = []
@@ -121,6 +123,8 @@ await playerList.forEach(player => {
         newPlayer.addEventListener("click", () => {
             completionsList.innerHTML = ""
             playerPos = playerList.indexOf(player)
+            player.province ? playerProvince.src=`./assets/${player.province}.png` : playerProvince.src=""
+
             playerName.innerHTML = playerList[playerPos].name
             hardestText.innerHTML = player.hardest.name
             pointsText.innerHTML = (player.points).toFixed(2)
@@ -151,10 +155,16 @@ await playerList.forEach(player => {
             }))
         })
 
-        newPlayer.innerHTML =
+        
+
+        player.province ? newPlayer.innerHTML = `<img src="./assets/${player.province.toUpperCase()}.png">` : newPlayer.innerHTML = '<img>'
+
+        newPlayer.innerHTML +=
             `
+                <div>
                 <h2>${"#" + i + " - " + player.name}</h2>
                 <h3>${(player.points).toFixed(2)}</h3>
+                </div>
             `
 
         player.element = newPlayer

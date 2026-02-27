@@ -1,6 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@500&display=swap');
 
-#mainContainer{
+#mainContainer {
     display: flex;
     justify-content: center;
     gap: 100px;
@@ -8,7 +8,7 @@
     flex-wrap: wrap;
 }
 
-#statsViewer{
+#statsViewer {
     margin-top: 20px;
     width: 600px;
     height: 700px;
@@ -22,7 +22,7 @@
     flex-direction: column;
 }
 
-#statsViewer h1{
+#statsViewer h1 {
     font-family: 'Montserrat', sans-serif;
     font-weight: 500;
     font-size: 50px;
@@ -30,21 +30,21 @@
     text-decoration: none;
 }
 
-#leaderboard{
+#leaderboard {
     margin-top: 20px;
     width: 90%;
     height: 600px;
     background-color: rgba(0, 0, 0, 0.158);
     display: flex;
     flex-direction: column;
-    overflow-y: scroll;
+    overflow-y: hidden;
     overflow-x: hidden;
     border-color: rgba(255, 255, 255, 0.438);
     border-width: 2px;
     border-style: solid;
 }
 
-#leaderboard input{
+#leaderboard input {
     height: 50px;
     border: none;
     background-color: rgba(255, 255, 255, 0.473);
@@ -52,7 +52,7 @@
     padding: 20px;
 }
 
-#userStats{
+#userStats {
     margin-top: 20px;
     width: 600px;
     min-height: 700px;
@@ -66,7 +66,7 @@
     flex-direction: column;
 }
 
-#userStats h1{
+#userStats h1 {
     font-family: 'Montserrat', sans-serif;
     font-weight: 500;
     font-size: 50px;
@@ -75,71 +75,83 @@
     margin-bottom: 30px;
 }
 
-#players-list{
+#players-list {
+    overflow-y: scroll;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
     list-style: none;
 }
 
-#player-name-icon{
+#player-name-icon {
     display: flex;
     flex-wrap: wrap;
-    justify-content:space-between;
+    justify-content: space-between;
     align-items: center;
     width: 100%;
     padding: 20px 50px;
 }
 
-#player-name{
+#player-name {
     text-align: center;
 }
 
-#player-icon{
-    width: 100px;
+#player-name-icon img {
     height: 100px;
+}
+
+#player-name-icon img:last-child {
+    aspect-ratio: 1/1;
     border-radius: 50%;
 }
 
-#players-list{
+#players-list {
     width: 100%;
 }
 
-#players-list div{
+#players-list>div {
+    display: flex;
     padding: 20px;
     cursor: pointer;
+    align-items: center;
+    gap: 20px;
 }
 
-.player-container-1{
+#players-list img {
+    width: 30px
+}
+
+.player-container-1 {
     background-color: rgba(39, 39, 39, 0.26);
 }
 
-.player-container-2{
+.player-container-2 {
     background-color: rgba(63, 63, 63, 0.26);
 }
 
-#players-list div h2{
+#players-list div h2 {
     color: white;
     font-family: 'Montserrat', sans-serif;
 }
 
-#players-list div h3{
+#players-list div h3 {
     color: rgb(153, 153, 153);
     font-family: 'Montserrat', sans-serif;
     font-style: italic;
 }
 
-.hide{
+.hide {
     display: none;
 }
 
-#top-stats{
+#top-stats {
     width: 100%;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-around;
 }
 
-.top-container{
+.top-container {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -147,7 +159,7 @@
     padding: 10px;
 }
 
-.top-container h2{
+.top-container h2 {
     color: white;
     font-family: 'Montserrat', sans-serif;
     font-size: 25px;
@@ -156,27 +168,27 @@
     margin-bottom: 10px;
 }
 
-#top-stats p{
+#top-stats p {
     color: white;
     font-family: 'Montserrat', sans-serif;
     font-size: 20px;
     text-align: center;
 }
 
-#completions-container{
+#completions-container {
     display: flex;
-    justify-content:space-between;
+    justify-content: space-between;
     gap: 100px;
     margin-top: 20px;
 }
 
-.completions-div{
+.completions-div {
     display: flex;
     align-items: center;
     flex-direction: column;
 }
 
-.completions-div ul{
+.completions-div ul {
     display: flex;
     flex-direction: row;
     list-style: none;
@@ -186,21 +198,21 @@
     margin: 10px 20px;
 }
 
-.completions-div ul li a h2{
+.completions-div ul li a h2 {
     color: rgb(199, 199, 199);
     font-family: 'Montserrat', sans-serif;
     font-size: 17px;
     font-style: italic;
 }
 
-.completions-title{
+.completions-title {
     color: white;
     font-family: 'Montserrat', sans-serif;
     font-size: 30px;
     font-weight: 800;
 }
 
-#completions-list li{
+#completions-list li {
     font-family: 'Montserrat', sans-serif;
     color: rgb(105, 105, 105);
     text-align: center;
@@ -211,73 +223,88 @@
     padding: 2px 3px;
 }
 
-#first{
+#first {
     color: white;
     font-family: 'Montserrat', sans-serif;
     font-size: 17px;
     font-style: normal;
     font-weight: 800;
-    
+
 }
 
 @media only screen and (max-width: 650px) {
 
-    #player-icon{
+    #player-name-icon img {
         width: 75px;
         height: 75px;
     }
 
-    .level-container{
+    .level-container {
         width: 370px;
     }
-    .level-name{
+
+    .level-name {
         font-size: 25px;
     }
-    .level-img{
+
+    .level-img {
         width: 150px;
         height: 84.38px;
     }
-    #logo{
+
+    #logo {
         font-size: 20px;
     }
-    header li, a, button{
+
+    header li,
+    a,
+    button {
         font-size: 15px
     }
+
     .cta button {
         margin: 0;
         padding: 9px 20px;
     }
-    header{
+
+    header {
         padding: 10px;
     }
-    #statsViewer{
+
+    #statsViewer {
         width: 95%;
     }
-    #leaderboard{
+
+    #leaderboard {
         width: 90%;
     }
-    #statsViewer h1{
+
+    #statsViewer h1 {
         font-size: 30px;
     }
-    #leaderboard input{
+
+    #leaderboard input {
         font-size: 20px;
     }
-    #userStats{
+
+    #userStats {
         width: 95%;
     }
-    #userStats h1{
+
+    #userStats h1 {
         font-size: 30px;
     }
-    #completions-container{
+
+    #completions-container {
         gap: 20px;
     }
 
-    .top-container h2{
+    .top-container h2 {
         font-size: 25px;
         height: auto;
     }
 
-    #players-list div h2{
+    #players-list div h2 {
         font-size: 20px;
     }
-  }
+}
