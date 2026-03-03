@@ -12,9 +12,6 @@ const firebaseConfig = {
     appId: "1:580475986041:web:82cc42325c06f6aa8f34a8"
 };
 
-// Initialize Firebase
-
-
 const logo = document.getElementById("logo")
 logo.addEventListener("click", function(){
     location.href = "index.html"
