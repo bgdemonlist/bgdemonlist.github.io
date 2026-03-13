@@ -1,283 +1,318 @@
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
-import { getDatabase, ref, query, orderByChild, get } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+import {
+	get,
+	orderByChild,
+	query,
+	ref,
+} from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
+import {
+	byId,
+	db,
+	getYouTubeThumbnail,
+	initAuthNavigation,
+	openExternal,
+	setText,
+} from './app-common.js';
 
-const firebaseConfig = {
-    databaseURL: 'https://bulgarian-demonlist-default-rtdb.europe-west1.firebasedatabase.app/',
-    apiKey: 'AIzaSyBR-ImRkDyL_K3mwur6en4sXjj2WB9a-cs',
-    authDomain: 'bulgarian-demonlist.firebaseapp.com',
-    projectId: 'bulgarian-demonlist',
-    storageBucket: 'bulgarian-demonlist.appspot.com',
-    messagingSenderId: '580475986041',
-    appId: '1:580475986041:web:82cc42325c06f6aa8f34a8',
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth();
-
-const ul = document.getElementById('nav_links');
-const startScreen = document.getElementById('start-screen');
-const gameScreen = document.getElementById('game-screen');
-const resultsSection = document.getElementById('results-section');
-const startBtn = document.getElementById('start-btn');
-const activeContainer = document.getElementById('active-level-container');
-const percentInput = document.getElementById('percent-input');
-const submitBtn = document.getElementById('submit-btn');
-const giveUpBtn = document.getElementById('give-up-btn');
-const roundDisplay = document.getElementById('round-count');
-const reqDisplay = document.getElementById('current-req');
-const resultsList = document.getElementById('results-list'); 
-const saveBtn = document.getElementById('save-btn');
-const loadBtn = document.getElementById('load-btn');
-const loadFileInput = document.getElementById('load-file-input');
+const startScreen = byId('start-screen');
+const gameScreen = byId('game-screen');
+const resultsSection = byId('results-section');
+const startBtn = byId('start-btn');
+const activeContainer = byId('active-level-container');
+const percentInput = byId('percent-input');
+const submitBtn = byId('submit-btn');
+const giveUpBtn = byId('give-up-btn');
+const roundDisplay = byId('round-count');
+const reqDisplay = byId('current-req');
+const resultsList = byId('results-list');
+const saveBtn = byId('save-btn');
+const loadBtn = byId('load-btn');
+const loadFileInput = byId('load-file-input');
 
 let allLevels = [];
-let gameQueue = []; 
+let gameQueue = [];
 let currentLevel = null;
 let currentReq = 1;
 let round = 1;
 let runHistory = [];
 
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        ul.innerHTML = `<li><a href="roulette.html">Roulette</a></li><li><a href="admin.html">Admin</a></li><li><a href="leaderboard.html">Leaderboard</a></li>`;
-    } else {
-        ul.innerHTML = `<li><a href="roulette.html">Roulette</a></li><li><a href="leaderboard.html">Leaderboard</a></li>`;
-    }
-});
-
-function getYouTubeVideoId(url) {
-    const regex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-    const match = url.match(regex);
-    return match ? match[1] : null;
-}
+initAuthNavigation();
 
 function shuffleArray(array) {
-    for (let i = array.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1)); 
-        [array[i], array[j]] = [array[j], array[i]];
-    }
-    return array;
+	for (let index = array.length - 1; index > 0; index -= 1) {
+		const randomIndex = Math.floor(Math.random() * (index + 1));
+		[array[index], array[randomIndex]] = [array[randomIndex], array[index]];
+	}
+	return array;
 }
-
-get(query(ref(db, 'levels'), orderByChild('pos')))
-    .then((snapshot) => {
-        snapshot.forEach((child) => {
-            allLevels.push(child.val());
-        });
-        startBtn.textContent = 'Start Roulette';
-        startBtn.disabled = false;
-        loadBtn.disabled = false;
-    })
-    .catch(console.error);
 
 function startGameUI() {
-    startScreen.classList.add('hide');
-    gameScreen.classList.remove('hide');
-    resultsSection.classList.remove('hide');
-}
-
-function loadNextLevel() {
-    if (gameQueue.length === 0) {
-        alert('You have completed every single level on the list! Incredible.');
-        return;
-    }
-
-    currentLevel = gameQueue.shift(); 
-    renderCard(currentLevel);
-
-    roundDisplay.innerText = round;
-    reqDisplay.innerText = `${currentReq}%`;
-    percentInput.value = '';
-    percentInput.focus();
+	startScreen.classList.add('hide');
+	gameScreen.classList.remove('hide');
+	resultsSection.classList.remove('hide');
 }
 
 function renderCard(level) {
-    activeContainer.innerHTML = '';
+	activeContainer.innerHTML = '';
 
-    let container = document.createElement('div');
-    container.classList.add('level-container', 'active-card');
+	const container = document.createElement('div');
+	container.classList.add('level-container', 'active-card');
 
-    let img = document.createElement('img');
-    img.classList.add('level-img');
-    let vidId = getYouTubeVideoId(level.video);
-    if (vidId) vidId = vidId.slice(0, 17);
-    img.src = vidId ? `https://img.youtube.com/vi/${vidId}/mqdefault.jpg` : '';
-    img.addEventListener('click', () => window.open(level.video));
+	const image = document.createElement('img');
+	image.className = 'level-img';
+	image.src = getYouTubeThumbnail(level.video);
+	image.alt = `${level.name} thumbnail`;
+	image.addEventListener('click', () => openExternal(level.video));
 
-    let textDiv = document.createElement('div');
-    textDiv.classList.add('level-text-container');
+	const textDiv = document.createElement('div');
+	textDiv.className = 'level-text-container';
 
-    let h4 = document.createElement('h4');
-    h4.innerHTML = `#${level.pos} - ${level.name}`;
-    h4.classList.add('level-name');
+	const title = document.createElement('h4');
+	title.className = 'level-name';
+	setText(title, `#${level.pos} - ${level.name}`);
 
-    let p = document.createElement('p');
-    p.innerHTML = level.creator;
-    p.classList.add('level-creator');
+	const creator = document.createElement('p');
+	creator.className = 'level-creator';
+	setText(creator, level.creator, 'Unknown creator');
 
-    textDiv.append(h4, p);
-    container.append(img, textDiv);
-    activeContainer.append(container);
+	textDiv.append(title, creator);
+	container.append(image, textDiv);
+	activeContainer.append(container);
 }
 
 function addHistoryCard(level, got) {
-    let card = document.createElement('div');
-    card.classList.add('level-container', 'result-card'); 
+	const card = document.createElement('div');
+	card.classList.add('level-container', 'result-card');
 
-    let img = document.createElement('img');
-    img.classList.add('level-img');
-    let vidId = getYouTubeVideoId(level.video);
-    if (vidId) vidId = vidId.slice(0, 17);
-    img.src = vidId ? `https://img.youtube.com/vi/${vidId}/mqdefault.jpg` : '';
-    img.addEventListener('click', () => window.open(level.video));
+	const image = document.createElement('img');
+	image.className = 'level-img';
+	image.src = getYouTubeThumbnail(level.video);
+	image.alt = `${level.name} thumbnail`;
+	image.addEventListener('click', () => openExternal(level.video));
 
-    let textDiv = document.createElement('div');
-    textDiv.classList.add('level-text-container');
+	const textDiv = document.createElement('div');
+	textDiv.className = 'level-text-container';
 
-    let h4 = document.createElement('h4');
-    h4.classList.add('level-name');
-    h4.innerHTML = `#${level.pos} - ${level.name} <span class="result-percent">${got}%</span>`;
+	const title = document.createElement('h4');
+	title.className = 'level-name';
+	setText(title, `#${level.pos} - ${level.name}`);
+	const percent = document.createElement('span');
+	percent.className = 'result-percent';
+	setText(percent, `${got}%`);
+	title.append(' ', percent);
 
-    let p = document.createElement('p');
-    p.classList.add('level-creator');
-    p.innerHTML = `by ${level.creator}`;
+	const creator = document.createElement('p');
+	creator.className = 'level-creator';
+	setText(creator, `by ${level.creator ?? 'Unknown creator'}`);
 
-    textDiv.append(h4, p);
-    card.append(img, textDiv);
-
-    resultsList.insertBefore(card, resultsList.firstChild);
+	textDiv.append(title, creator);
+	card.append(image, textDiv);
+	resultsList.insertBefore(card, resultsList.firstChild);
 }
 
 function resetGame() {
-    startScreen.classList.remove('hide');
-    gameScreen.classList.add('hide');
+	startScreen.classList.remove('hide');
+	gameScreen.classList.add('hide');
+	resultsSection.classList.add('hide');
+	activeContainer.innerHTML = '';
+	currentLevel = null;
 }
 
-startBtn.addEventListener('click', () => {
-    if (allLevels.length === 0) return;
+function loadNextLevel() {
+	if (gameQueue.length === 0) {
+		currentLevel = null;
+		alert('You have completed every single level on the list! Incredible.');
+		resetGame();
+		return;
+	}
 
-    runHistory = [];
-    gameQueue = shuffleArray([...allLevels]);
-    currentReq = 1;
-    round = 1;
-    resultsList.innerHTML = ''; 
+	currentLevel = gameQueue.shift();
+	renderCard(currentLevel);
 
-    startGameUI();
-    loadNextLevel();
-});
-
-submitBtn.addEventListener('click', () => {
-    const inputVal = parseInt(percentInput.value);
-
-    if (isNaN(inputVal) || inputVal < 0 || inputVal > 100) {
-        alert('Please enter a valid percentage (0-100)');
-        return;
-    }
-    
-    if (inputVal < currentReq) {
-        return;
-    }
-
-    runHistory.push({
-        pos: currentLevel.pos,
-        name: currentLevel.name,
-        creator: currentLevel.creator,
-        video: currentLevel.video,
-        req: currentReq,
-        got: inputVal
-    });
-
-    addHistoryCard(currentLevel, inputVal);
-
-    currentReq = inputVal + 1; 
-    if (currentReq > 100) {
-        alert('Congratulation! You reached 100% requirement.');
-    }
-    round++;
-    loadNextLevel();
-});
-
-giveUpBtn.addEventListener('click', () => {
-    if (confirm('Are you sure you want to give up?')) {
-        resetGame();
-    }
-});
-
-saveBtn.addEventListener('click', saveGame);
+	setText(roundDisplay, String(round));
+	setText(reqDisplay, `${currentReq}%`);
+	percentInput.value = '';
+	percentInput.focus();
+}
 
 function saveGame() {
-    const saveObject = {
-        currentReq: currentReq,
-        round: round,
-        queuePos: gameQueue.map(level => level.pos), 
-        history: runHistory
-    };
+	if (!currentLevel && runHistory.length === 0 && gameQueue.length === 0) {
+		alert('There is no active run to save.');
+		return;
+	}
 
-    const json = JSON.stringify(saveObject, null, 2);
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const date = new Date().toISOString().slice(0, 10);
-    const filename = `bdl_roulette_save_${date}.json`;
+	const saveObject = {
+		currentReq,
+		round,
+		currentLevelPos: currentLevel?.pos ?? null,
+		queuePos: gameQueue.map((level) => level.pos),
+		history: runHistory,
+	};
 
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-    alert(`Game saved as ${filename}`);
+	const json = JSON.stringify(saveObject, null, 2);
+	const blob = new Blob([json], { type: 'application/json' });
+	const url = URL.createObjectURL(blob);
+	const date = new Date().toISOString().slice(0, 10);
+	const filename = `bdl_roulette_save_${date}.json`;
+
+	const link = document.createElement('a');
+	link.href = url;
+	link.download = filename;
+	document.body.append(link);
+	link.click();
+	document.body.removeChild(link);
+	URL.revokeObjectURL(url);
+	alert(`Game saved as ${filename}`);
 }
 
-loadBtn.addEventListener('click', () => loadFileInput.click());
-loadFileInput.addEventListener('change', loadGame);
+function restoreQueue(saveObject) {
+	const savedQueuePos = Array.isArray(saveObject.queuePos)
+		? saveObject.queuePos
+		: [];
+	const restoredQueue = savedQueuePos
+		.map((pos) => allLevels.find((level) => level.pos === pos))
+		.filter(Boolean);
+	const restoredCurrentLevel = allLevels.find(
+		(level) => level.pos === saveObject.currentLevelPos,
+	);
+
+	return restoredCurrentLevel
+		? [restoredCurrentLevel, ...restoredQueue]
+		: restoredQueue;
+}
 
 function loadGame(event) {
-    const file = event.target.files[0];
-    if (!file) return;
+	const file = event.target.files[0];
+	if (!file) {
+		return;
+	}
 
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        try {
-            const saveObject = JSON.parse(e.target.result);
+	const reader = new FileReader();
+	reader.onload = ({ target }) => {
+		try {
+			const saveObject = JSON.parse(target.result);
+			currentReq = Number.isInteger(saveObject.currentReq)
+				? saveObject.currentReq
+				: 1;
+			round = Number.isInteger(saveObject.round) ? saveObject.round : 1;
+			runHistory = Array.isArray(saveObject.history) ? saveObject.history : [];
+			gameQueue = restoreQueue(saveObject);
 
-            currentReq = saveObject.currentReq || 1;
-            round = saveObject.round || 1;
-            runHistory = saveObject.history || [];
+			if (gameQueue.length === 0 && runHistory.length > 0) {
+				alert(
+					'Save loaded! All levels in the queue have been played. You may start a new run.',
+				);
+				resetGame();
+				return;
+			}
 
-            const savedQueuePos = saveObject.queuePos || [];
-            gameQueue = savedQueuePos.map(pos => 
-                allLevels.find(level => level.pos === pos)
-            ).filter(level => level);
+			if (gameQueue.length === 0) {
+				alert('Save file seems empty or corrupted. Please start a new game.');
+				return;
+			}
 
-            if (gameQueue.length === 0 && runHistory.length > 0) {
-                 alert("Save loaded! All levels in the queue have been played. You may start a new run.");
-                 resetGame();
-                 return;
-            } else if (gameQueue.length === 0) {
-                 alert("Save file seems empty or corrupted. Please start a new game.");
-                 return;
-            }
-            
-            resultsList.innerHTML = '';
-            runHistory.slice().reverse().forEach(h => {
-                addHistoryCard(h, h.got);
-            });
+			resultsList.innerHTML = '';
+			runHistory
+				.slice()
+				.reverse()
+				.forEach((entry) => addHistoryCard(entry, entry.got));
 
-            startGameUI();
-            currentLevel = gameQueue.shift();
-            renderCard(currentLevel);
-            
-            roundDisplay.innerText = round;
-            reqDisplay.innerText = `${currentReq}%`;
-            alert(`Game Loaded Successfully! Resuming Round ${round}.`);
+			startGameUI();
+			loadNextLevel();
+			setText(roundDisplay, String(round));
+			setText(reqDisplay, `${currentReq}%`);
+			alert(`Game Loaded Successfully! Resuming Round ${round}.`);
+		} catch (error) {
+			alert('Error loading save file: The file is corrupted or not valid JSON.');
+			console.error(error);
+		}
+	};
 
-        } catch (error) {
-            alert('Error loading save file: The file is corrupted or not a valid JSON.');
-            console.error(error);
-        }
-    };
-    reader.readAsText(file);
+	reader.readAsText(file);
+	event.target.value = '';
 }
+
+startBtn?.addEventListener('click', () => {
+	if (allLevels.length === 0) {
+		return;
+	}
+
+	runHistory = [];
+	gameQueue = shuffleArray([...allLevels]);
+	currentReq = 1;
+	round = 1;
+	resultsList.innerHTML = '';
+
+	startGameUI();
+	loadNextLevel();
+});
+
+submitBtn?.addEventListener('click', () => {
+	if (!currentLevel) {
+		alert('Start or load a run before submitting a result.');
+		return;
+	}
+
+	const inputVal = Number.parseInt(percentInput.value, 10);
+	if (Number.isNaN(inputVal) || inputVal < 0 || inputVal > 100) {
+		alert('Please enter a valid percentage (0-100).');
+		return;
+	}
+
+	if (inputVal < currentReq) {
+		alert(`You need at least ${currentReq}% to continue.`);
+		return;
+	}
+
+	runHistory.push({
+		pos: currentLevel.pos,
+		name: currentLevel.name,
+		creator: currentLevel.creator,
+		video: currentLevel.video,
+		req: currentReq,
+		got: inputVal,
+	});
+
+	addHistoryCard(currentLevel, inputVal);
+
+	currentReq = inputVal + 1;
+	if (currentReq > 100) {
+		alert('Congratulations! You reached the 100% requirement.');
+		resetGame();
+		return;
+	}
+
+	round += 1;
+	loadNextLevel();
+});
+
+giveUpBtn?.addEventListener('click', () => {
+	if (confirm('Are you sure you want to give up?')) {
+		resetGame();
+	}
+});
+
+saveBtn?.addEventListener('click', saveGame);
+loadBtn?.addEventListener('click', () => loadFileInput.click());
+loadFileInput?.addEventListener('change', loadGame);
+
+get(query(ref(db, 'levels'), orderByChild('pos')))
+	.then((snapshot) => {
+		snapshot.forEach((child) => {
+			const level = child.val();
+			if (level?.name && typeof level.pos === 'number') {
+				allLevels.push(level);
+			}
+		});
+
+		if (allLevels.length > 0) {
+			setText(startBtn, 'Start Roulette');
+			startBtn.disabled = false;
+			loadBtn.disabled = false;
+		} else {
+			setText(startBtn, 'No Levels Available');
+		}
+	})
+	.catch((error) => {
+		console.error('Failed to load roulette levels.', error);
+		setText(startBtn, 'Failed to Load Levels');
+	});

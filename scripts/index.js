@@ -1,104 +1,85 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getDatabase, ref, push, onValue, remove, query, orderByKey, orderByChild, orderByValue, get } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"
-import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import {
+	get,
+	orderByChild,
+	query,
+	ref,
+} from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
+import {
+	byId,
+	db,
+	getYouTubeThumbnail,
+	initAuthNavigation,
+	openExternal,
+	setText,
+} from './app-common.js';
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  databaseURL: "https://bulgarian-demonlist-default-rtdb.europe-west1.firebasedatabase.app/",
-  apiKey: "AIzaSyBR-ImRkDyL_K3mwur6en4sXjj2WB9a-cs",
-  authDomain: "bulgarian-demonlist.firebaseapp.com",
-  projectId: "bulgarian-demonlist",
-  storageBucket: "bulgarian-demonlist.appspot.com",
-  messagingSenderId: "580475986041",
-  appId: "1:580475986041:web:82cc42325c06f6aa8f34a8"
-};
+const levelSection = byId('levels-container');
+const levelSearch = byId('level-search');
+const levelsList = [];
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth();
+initAuthNavigation();
 
-const ul = document.getElementById("nav_links");
+function createLevelCard(level) {
+	const levelContainer = document.createElement('div');
+	levelContainer.className = 'level-container';
 
-onAuthStateChanged(auth, (user) => {
-  if (user) {
-    const uid = user.uid;
-    ul.innerHTML = 
-    `
-    <li><a href="admin.html">Admin</a></li>
-    <li><a href="roulette.html">Roulette</a></li>
-    <li><a href="leaderboard.html">Leaderboard</a></li>
-    `
-    console.log("signed in")
-  } else {
-      ul.innerHTML = 
-      `
-      <li><a href="roulette.html">Roulette</a></li>
-      <li><a href="leaderboard.html">Leaderboard</a></li>
-      `
-      console.log("not signed in")
-  }
-});
+	const levelImage = document.createElement('img');
+	levelImage.className = 'level-img';
+	levelImage.src = getYouTubeThumbnail(level.video);
+	levelImage.alt = `${level.name} thumbnail`;
+	levelImage.addEventListener('click', () => openExternal(level.video));
+	levelContainer.append(levelImage);
 
-const levelSection = document.getElementById("levels-container")
-const levelSearch = document.getElementById("level-search")
-let levelsList = [];
+	const textContainer = document.createElement('div');
+	textContainer.className = 'level-text-container';
 
-function getYouTubeVideoId(url) {
-  const regex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([a-zA-Z0-9_-]{11})/;
-  const match = url.match(regex);
-  return match ? match[1] : null;
+	const levelName = document.createElement('h4');
+	levelName.className = 'level-name';
+	setText(levelName, `#${level.pos} - ${level.name}`);
+	levelName.addEventListener('click', () => {
+		location.href = `level.html?pos=${level.pos}`;
+	});
+	textContainer.append(levelName);
+
+	const levelCreator = document.createElement('p');
+	levelCreator.className = 'level-creator';
+	setText(levelCreator, level.creator, 'Unknown creator');
+	textContainer.append(levelCreator);
+
+	levelContainer.append(textContainer);
+	return levelContainer;
 }
 
-await get(query(ref(db, "levels"), orderByChild('pos')))
-  .then((snapshot) => {
-    snapshot.forEach(child => {
-      let temp = child.val();
-      let levelContainer = document.createElement("div")
-      levelContainer.classList.add("level-container")
-      levelSection.append(levelContainer)
-      temp.element = levelContainer
+function applySearchFilter() {
+	const searchValue = levelSearch?.value.toLowerCase().trim() ?? '';
 
-      let levelImage = document.createElement("img")
-      levelImage.classList.add("level-img")
-      let videoId = getYouTubeVideoId(child.val().video)
-      videoId = videoId.slice(0, 17)
-      let image = "https://img.youtube.com/vi/" + videoId + "/mqdefault.jpg"
-      levelImage.src = image
-      levelContainer.append(levelImage)
-      levelImage.addEventListener("click", function () {
-        window.open(child.val().video)
-      })
+	levelsList.forEach((level) => {
+		const isVisible = (level.name ?? '').toLowerCase().includes(searchValue);
+		level.element.classList.toggle('hide', !isVisible);
+	});
+}
 
-      let textContainer = document.createElement("div")
-      textContainer.classList.add("level-text-container")
-      levelContainer.append(textContainer)
+async function loadLevels() {
+	if (!levelSection) {
+		return;
+	}
 
-      let levelName = document.createElement("h4")
-      levelName.innerHTML = "#" + child.val().pos + " - " + child.val().name
-      levelName.classList.add("level-name")
-      levelName.onclick = function () {
-        location.href = "level.html?pos=" + child.val().pos
-      }
-      textContainer.append(levelName)
+	const snapshot = await get(query(ref(db, 'levels'), orderByChild('pos')));
 
-      let levelCreator = document.createElement("p")
-      levelCreator.innerHTML = child.val().creator
-      levelCreator.classList.add("level-creator")
-      textContainer.append(levelCreator)
+	snapshot.forEach((child) => {
+		const level = child.val();
+		if (!level?.name || typeof level.pos !== 'number') {
+			return;
+		}
 
-      levelsList.push(temp);
-    })
-  })
+		level.element = createLevelCard(level);
+		levelSection.append(level.element);
+		levelsList.push(level);
+	});
+}
 
+levelSearch?.addEventListener('input', applySearchFilter);
 
-levelSearch.addEventListener("input", e => {
-  const value = e.target.value.toLowerCase()
-  levelsList.forEach(level => {
-      const isVisible = level.name.toLowerCase().includes(value)
-      level.element.classList.toggle("hide", !isVisible)
-  })
-})
+loadLevels().catch((error) => {
+	console.error('Failed to load levels.', error);
+});

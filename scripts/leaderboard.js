@@ -1,64 +1,20 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
 import {
-	getDatabase,
 	ref,
-	push,
-	onValue,
-	remove,
-	set,
 	orderByChild,
-	orderByKey,
 	query,
 	get,
 } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
 import {
-	getAuth,
-	createUserWithEmailAndPassword,
-	onAuthStateChanged,
-} from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
-import {
 	ref as sRef,
-	getStorage,
 	getDownloadURL,
 } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js';
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-	apiKey: 'AIzaSyBR-ImRkDyL_K3mwur6en4sXjj2WB9a-cs',
-	authDomain: 'bulgarian-demonlist.firebaseapp.com',
-	databaseURL:
-		'https://bulgarian-demonlist-default-rtdb.europe-west1.firebasedatabase.app',
-	projectId: 'bulgarian-demonlist',
-	storageBucket: 'bulgarian-demonlist.appspot.com',
-	messagingSenderId: '580475986041',
-	appId: '1:580475986041:web:82cc42325c06f6aa8f34a8',
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth();
-const storage = getStorage();
-const ul = document.getElementById('nav_links');
-onAuthStateChanged(auth, (user) => {
-	if (user) {
-		const uid = user.uid;
-		ul.innerHTML = `
-      <li><a href="admin.html">Admin</a></li>
-      <li><a href="roulette.html">Roulette</a></li>
-      <li><a href="leaderboard.html">Leaderboard</a></li>
-      `;
-		console.log('signed in');
-	} else {
-		ul.innerHTML = `
-        <li><a href="roulette.html">Roulette</a></li>
-        <li><a href="leaderboard.html">Leaderboard</a></li>
-        `;
-		console.log('not signed in');
-	}
-});
+import {
+	byId,
+	db,
+	initAuthNavigation,
+	setText,
+	storage,
+} from './app-common.js';
 
 const PROVINCE_MAP = {
 	E: 'Blagoevgrad',
@@ -91,29 +47,22 @@ const PROVINCE_MAP = {
 	Y: 'Yambol',
 };
 
-const leaderboard = document.getElementById('players-list');
-const playerIcon = document.getElementById('player-icon');
-const playerSearch = document.getElementById('player-search');
-const playerName = document.getElementById('player-name');
-const hardestText = document.getElementById('hardest-text');
-const pointsText = document.getElementById('points-text');
-const rankText = document.getElementById('rank-text');
-const completionsText = document.getElementById('completions-text');
-const completionsList = document.getElementById('completions-list');
-const playerProvince = document.getElementById('player-province');
-const provinceFilter = document.getElementById('province-filter');
+const leaderboard = byId('players-list');
+const playerIcon = byId('player-icon');
+const playerSearch = byId('player-search');
+const playerName = byId('player-name');
+const hardestText = byId('hardest-text');
+const pointsText = byId('points-text');
+const rankText = byId('rank-text');
+const completionsText = byId('completions-text');
+const completionsList = byId('completions-list');
+const playerProvince = byId('player-province');
+const provinceFilter = byId('province-filter');
 
-let playerPos = 0;
-let playerList = [];
-let levelsList = [];
+const playerList = [];
+const levelPositionByName = new Map();
 
-function getPosFromLevelName(name) {
-	for (let i in levelsList) {
-		if (name.localeCompare(levelsList[i].name) == 0) {
-			return levelsList[i].pos;
-		}
-	}
-}
+initAuthNavigation();
 
 function normalizeProvince(code) {
 	return code ? String(code).trim().toUpperCase() : '';
@@ -124,9 +73,35 @@ function getProvinceName(code) {
 	return PROVINCE_MAP[normalized] || normalized || 'Unknown';
 }
 
+function getPositionFromLevelName(name) {
+	return levelPositionByName.get(name) ?? Infinity;
+}
+
+function calculatePoints(pos) {
+	if (!Number.isFinite(pos)) {
+		return 0;
+	}
+
+	if (pos <= 20) {
+		return 322.2 * 0.945 ** (pos - 1) + 0.8;
+	}
+
+	if (pos <= 400) {
+		return 106.2 * 0.9882 ** (pos - 20);
+	}
+
+	return 1;
+}
+
+function getSortedRecords(player) {
+	return Object.values(player.records ?? {}).sort(
+		(a, b) => getPositionFromLevelName(a.name) - getPositionFromLevelName(b.name),
+	);
+}
+
 function applyFilters() {
-	const nameValue = playerSearch.value.toLowerCase().trim();
-	const provinceValue = normalizeProvince(provinceFilter.value);
+	const nameValue = playerSearch?.value.toLowerCase().trim() ?? '';
+	const provinceValue = normalizeProvince(provinceFilter?.value);
 
 	playerList.forEach((player) => {
 		const matchesName = player.name.toLowerCase().includes(nameValue);
@@ -134,8 +109,10 @@ function applyFilters() {
 		const matchesProvince =
 			!provinceValue || playerProvinceValue === provinceValue;
 
-		const isVisible = matchesName && matchesProvince;
-		player.element.classList.toggle('hide', !isVisible);
+		player.element?.classList.toggle(
+			'hide',
+			!(matchesName && matchesProvince),
+		);
 	});
 }
 
@@ -149,189 +126,217 @@ function buildProvinceDropdown() {
 		}
 	});
 
-	provinceFilter.innerHTML = `<option value="">All</option>`;
+	if (!provinceFilter) {
+		return;
+	}
+
+	provinceFilter.innerHTML = '';
+	const allOption = document.createElement('option');
+	allOption.value = '';
+	setText(allOption, 'All');
+	provinceFilter.append(allOption);
 
 	[...provinces]
 		.sort((a, b) => getProvinceName(a).localeCompare(getProvinceName(b)))
 		.forEach((code) => {
 			const option = document.createElement('option');
-			option.value = code; // IMPORTANT: still the code
-			option.textContent = getProvinceName(code); // visible full name
-			provinceFilter.appendChild(option);
+			option.value = code;
+			setText(option, getProvinceName(code));
+			provinceFilter.append(option);
 		});
 }
 
-function calculatePoints(pos) {
-	//     if p <= 20:
-	//     # Steep Elite Curve
-	//     points = 322.2 * (0.945**(p-1)) + 0.8
-	// else:
-	//     # Balanced List Curve
-	//     points = 106.2 * (0.9882**(p-20))
-	if (pos <= 20) {
-		return 322.2 * 0.945 ** (pos - 1) + 0.8;
-	} else if (pos <= 400) {
-		return 106.2 * 0.9882 ** (pos - 20);
-	} else return 1;
-}
+async function setPlayerIcon(player) {
+	if (!playerIcon) {
+		return;
+	}
 
-await get(ref(db, 'users')).then((users) => {
-	users.forEach((user) => {
-		playerList.push(user.val());
-	});
-});
-
-await playerList.forEach((player) => {
-	player.points = 0;
-	if(player.name=="soletki")player.points=Infinity;
-	player.hardest = Object.values(player.records)[0];
-});
-
-await get(query(ref(db, 'levels'), orderByChild('pos'))).then((levels) => {
-	levels.forEach((level) => {
-		levelsList.push(level.val());
-	});
-});
-
-await playerList.forEach((player) => {
-	Object.values(player.records).forEach((value) => {
-		if (
-			getPosFromLevelName(value.name) <
-			getPosFromLevelName(player.hardest.name)
-		) {
-			player.hardest = value;
-		}
-		player.points += calculatePoints(
-			getPosFromLevelName(value.name),
-			levelsList.length,
+	try {
+		playerIcon.src = await getDownloadURL(
+			sRef(storage, `player-icons/${player.name}.jpg`),
 		);
-	});
-});
+	} catch {
+		playerIcon.src = await getDownloadURL(
+			sRef(storage, 'player-icons/default-user-icon.png'),
+		);
+	}
+}
 
-await playerList.sort((a, b) => b.points - a.points);
+function renderCompletions(records) {
+	completionsList.innerHTML = '';
 
-let i = 1;
-
-await playerList.forEach((player) => {
-	if (player.points != 0) {
-		let newPlayer = document.createElement('div');
-		if (i % 2 == 0) {
-			newPlayer.classList.add('player-container-2');
-		} else {
-			newPlayer.classList.add('player-container-1');
+	records.forEach((record, index) => {
+		const item = document.createElement('li');
+		const link = document.createElement('a');
+		link.href = record.video || '#';
+		if (record.video) {
+			link.target = '_blank';
+			link.rel = 'noopener noreferrer';
 		}
 
-		newPlayer.addEventListener('click', () => {
-			completionsList.innerHTML = '';
-			playerPos = playerList.indexOf(player);
-			player.province
-				? (playerProvince.src = `./assets/${player.province}.png`)
-				: (playerProvince.src = '');
+		const title = document.createElement('h2');
+		if (record.first) {
+			title.id = 'first';
+		}
+		setText(title, record.name, 'Unknown');
+		link.append(title);
+		item.append(link);
+		completionsList.append(item);
 
-			playerName.innerHTML = playerList[playerPos].name;
-			hardestText.innerHTML = player.hardest.name;
-			pointsText.innerHTML = player.points.toFixed(2);
-			completionsText.innerHTML =
-				Object.values(playerList[playerPos].records).length +
-				' (' +
-				Object.values(playerList[playerPos].records).filter(
-					(record) => record.first == true,
-				).length +
-				' FVs)';
-			rankText.innerHTML = '#' + (playerPos + 1);
-			let records = Object.values(player.records);
-			records.forEach((record, index) => {
-				let isLast = index === records.length - 1;
+		if (index < records.length - 1) {
+			const separator = document.createElement('li');
+			setText(separator, '-');
+			completionsList.append(separator);
+		}
+	});
+}
 
-				if (record.first == true) {
-					completionsList.innerHTML += `
-                    <li><a href="${record.video}"><h2 id="first">${record.name}</h2></a></li>
-                    ${!isLast ? '<li>-</li>' : ''}
-                    `;
-				} else {
-					completionsList.innerHTML += `
-                    <li><a href="${record.video}"><h2>${record.name}</h2></a></li>
-                    ${!isLast ? '<li>-</li>' : ''}
-                    `;
-				}
-			});
-
-			getDownloadURL(
-				sRef(storage, `player-icons/${playerList[playerPos].name}.jpg`),
-			)
-				.then((url) => {
-					playerIcon.src = url;
-				})
-				.catch((e) =>
-					getDownloadURL(
-						sRef(storage, 'player-icons/default-user-icon.png'),
-					).then((url) => {
-						playerIcon.src = url;
-					}),
-				);
-		});
-
-		player.province
-			? (newPlayer.innerHTML = `<img src="./assets/${player.province.toUpperCase()}.png">`)
-			: (newPlayer.innerHTML = '<img>');
-
-		newPlayer.innerHTML += `
-                <div>
-                <h2>${'#' + i + ' - ' + player.name}</h2>
-                <h3>${player.points.toFixed(2)}</h3>
-                </div>
-            `;
-
-		const li = document.createElement('li');
-		li.append(newPlayer);
-		player.element = li;
-		leaderboard.append(li);
+async function renderSelectedPlayer(index) {
+	const player = playerList[index];
+	if (!player) {
+		setText(playerName, 'No players yet');
+		setText(hardestText, '-');
+		setText(pointsText, '0.00');
+		setText(rankText, '-');
+		setText(completionsText, '0 (0 FVs)');
+		completionsList.innerHTML = '';
+		if (playerProvince) {
+			playerProvince.src = '';
+		}
+		if (playerIcon) {
+			playerIcon.src = '';
+		}
+		return;
 	}
-	i++;
-});
-buildProvinceDropdown();
 
-playerSearch.addEventListener('input', applyFilters);
-provinceFilter.addEventListener('change', applyFilters);
+	const records = getSortedRecords(player);
+	const firstVictories = records.filter((record) => record.first).length;
 
-completionsList.innerHTML = '';
-playerName.innerHTML = playerList[playerPos].name;
-hardestText.innerHTML = playerList[playerPos].hardest.name;
-pointsText.innerHTML = playerList[playerPos].points.toFixed(2);
-playerList[playerPos].province
-	? (playerProvince.src = `./assets/${playerList[playerPos].province}.png`)
-	: (playerProvince.src = '');
-completionsText.innerHTML =
-	Object.values(playerList[playerPos].records).length +
-	' (' +
-	Object.values(playerList[playerPos].records).filter(
-		(record) => record.first == true,
-	).length +
-	' FVs)';
-rankText.innerHTML = '#' + (playerPos + 1);
-let records = Object.values(playerList[playerPos].records);
-records.forEach((record, index) => {
-	let isLast = index === records.length - 1;
-	if (record.first == true) {
-		completionsList.innerHTML += `
-        <li><a href="${record.video}"><h2 id="first">${record.name}</h2></a></li>
-        ${!isLast ? '<li>-</li>' : ''}
-        `;
-	} else {
-		completionsList.innerHTML += `
-        <li><a href="${record.video}"><h2>${record.name}</h2></a></li>
-        ${!isLast ? '<li>-</li>' : ''}
-        `;
-	}
-});
-getDownloadURL(sRef(storage, `player-icons/${playerList[playerPos].name}.jpg`))
-	.then((url) => {
-		playerIcon.src = url;
-	})
-	.catch((e) =>
-		getDownloadURL(
-			sRef(storage, 'player-icons/default-user-icon.png'),
-		).then((url) => {
-			playerIcon.src = url;
-		}),
+	setText(playerName, player.name, 'Unknown');
+	setText(hardestText, player.hardest?.name ?? '-');
+	setText(
+		pointsText,
+		Number.isFinite(player.points) ? player.points.toFixed(2) : 'Infinity',
 	);
+	setText(rankText, `#${index + 1}`);
+	setText(completionsText, `${records.length} (${firstVictories} FVs)`);
+	renderCompletions(records);
+
+	if (playerProvince) {
+		playerProvince.src = player.province
+			? `./assets/${normalizeProvince(player.province)}.png`
+			: '';
+	}
+
+	await setPlayerIcon(player);
+}
+
+function createPlayerListItem(player, displayRank) {
+	const row = document.createElement('div');
+	row.className =
+		displayRank % 2 === 0 ? 'player-container-2' : 'player-container-1';
+	row.addEventListener('click', () => {
+		renderSelectedPlayer(playerList.indexOf(player)).catch((error) => {
+			console.error('Failed to render player details.', error);
+		});
+	});
+
+	const provinceImage = document.createElement('img');
+	if (player.province) {
+		provinceImage.src = `./assets/${normalizeProvince(player.province)}.png`;
+		provinceImage.alt = `${getProvinceName(player.province)} flag`;
+	}
+	row.append(provinceImage);
+
+	const textWrapper = document.createElement('div');
+	const nameHeading = document.createElement('h2');
+	setText(nameHeading, `#${displayRank} - ${player.name}`);
+	const scoreHeading = document.createElement('h3');
+	setText(
+		scoreHeading,
+		Number.isFinite(player.points) ? player.points.toFixed(2) : 'Infinity',
+	);
+	textWrapper.append(nameHeading, scoreHeading);
+	row.append(textWrapper);
+
+	const listItem = document.createElement('li');
+	listItem.append(row);
+	player.element = listItem;
+	return listItem;
+}
+
+async function loadData() {
+	const [usersSnapshot, levelsSnapshot] = await Promise.all([
+		get(ref(db, 'users')),
+		get(query(ref(db, 'levels'), orderByChild('pos'))),
+	]);
+
+	levelsSnapshot.forEach((levelSnapshot) => {
+		const level = levelSnapshot.val();
+		if (!level?.name || typeof level.pos !== 'number') {
+			return;
+		}
+
+		levelPositionByName.set(level.name, level.pos);
+	});
+
+	usersSnapshot.forEach((userSnapshot) => {
+		const player = userSnapshot.val();
+		const records = Object.values(player?.records ?? {});
+		if (!player?.name || !records.length) {
+			return;
+		}
+
+		const hardest = records.reduce((currentHardest, record) => {
+			return getPositionFromLevelName(record.name) <
+				getPositionFromLevelName(currentHardest.name)
+				? record
+				: currentHardest;
+		}, records[0]);
+
+		const points =
+			player.name === 'soletki'
+				? Infinity
+				: records.reduce((total, record) => {
+						return total + calculatePoints(getPositionFromLevelName(record.name));
+					}, 0);
+
+		playerList.push({
+			...player,
+			hardest,
+			points,
+		});
+	});
+
+	playerList.sort((a, b) => b.points - a.points);
+}
+
+function renderLeaderboard() {
+	leaderboard.innerHTML = '';
+
+	let displayRank = 1;
+	playerList.forEach((player) => {
+		if (player.points === 0) {
+			return;
+		}
+
+		leaderboard.append(createPlayerListItem(player, displayRank));
+		displayRank += 1;
+	});
+
+	buildProvinceDropdown();
+	applyFilters();
+}
+
+playerSearch?.addEventListener('input', applyFilters);
+provinceFilter?.addEventListener('change', applyFilters);
+
+loadData()
+	.then(() => {
+		renderLeaderboard();
+		return renderSelectedPlayer(0);
+	})
+	.catch((error) => {
+		console.error('Failed to load leaderboard.', error);
+		return renderSelectedPlayer(-1);
+	});
