@@ -1,176 +1,64 @@
-// Import Firebase SDKs
-import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
 import {
-	getDatabase,
-	set,
 	ref,
 	update,
 	onValue,
 	query,
 	orderByChild,
 	get,
+	set,
 } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
 import {
-	getAuth,
-	signInWithEmailAndPassword,
 	onAuthStateChanged,
+	signInWithEmailAndPassword,
 } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+import {
+	auth,
+	byId,
+	db,
+	getYouTubeThumbnail,
+	initAuthNavigation,
+	normalizeKey,
+	openExternal,
+	setText,
+} from './app-common.js';
 
-// Firebase configuration
-const firebaseConfig = {
-	databaseURL:
-		'https://bulgarian-demonlist-default-rtdb.europe-west1.firebasedatabase.app/',
-	apiKey: 'AIzaSyBR-ImRkDyL_K3mwur6en4sXjj2WB9a-cs',
-	authDomain: 'bulgarian-demonlist.firebaseapp.com',
-	projectId: 'bulgarian-demonlist',
-	storageBucket: 'bulgarian-demonlist.appspot.com',
-	messagingSenderId: '580475986041',
-	appId: '1:580475986041:web:82cc42325c06f6aa8f34a8',
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth();
-
-// Navigation links
-const ul = document.getElementById('nav_links');
-
-// Handle authentication
-onAuthStateChanged(auth, (user) => {
-	if (user) {
-		ul.innerHTML = `
-      <li><a href="admin.html">Admin</a></li>
-      <li><a href="roulette.html">Roulette</a></li>
-      <li><a href="leaderboard.html">Leaderboard</a></li>
-    `;
-		console.log('signed in');
-	} else {
-		const password = prompt('Enter password');
-		signInWithEmailAndPassword(auth, 'pishka@gmail.com', password);
-		ul.innerHTML = `
-      <li><a href="roulette.html">Roulette</a></li>
-      <li><a href="leaderboard.html">Leaderboard</a></li>
-    `;
-		console.log('not signed in');
-	}
-});
-
-// UI elements
-const levelSectionDiv = document.getElementById('levels-container-div');
-const levelSearch = document.getElementById('level-search');
-const plus = document.getElementById('plus');
-const minus = document.getElementById('minus');
-const blackScreen = document.getElementById('black-screen');
-const addPopup = document.getElementById('add-popup');
-const removePopup = document.getElementById('remove-popup');
-const addPopupForm = document.getElementById('add-popup-bottom');
-const removePopupForm = document.getElementById('remove-popup-bottom');
-const addPopupExit = document.getElementById('add-popup-close');
-const removePopupExit = document.getElementById('remove-popup-close');
+const levelSectionDiv = byId('levels-container-div');
+const levelSearch = byId('level-search');
+const plus = byId('plus');
+const minus = byId('minus');
+const blackScreen = byId('black-screen');
+const addPopup = byId('add-popup');
+const removePopup = byId('remove-popup');
+const addPopupForm = byId('add-popup-bottom');
+const removePopupForm = byId('remove-popup-bottom');
+const addPopupExit = byId('add-popup-close');
+const removePopupExit = byId('remove-popup-close');
+const removePopupInput = byId('remove-popup-input');
+const removePopupCookiesDiv = byId('remove-popup-cookies-div');
 
 let levelsList = [];
-let levelsAlreadyGenerated = false;
 
-// Render levels ordered by position
-onValue(query(ref(db, 'levels'), orderByChild('pos')), (snapshot) => {
-	levelsList = [];
-	levelSectionDiv.innerHTML = '';
-	document.getElementById('remove-popup-cookies-div').innerHTML = '';
+initAuthNavigation();
 
-	snapshot.forEach((child) => {
-		const data = child.val();
-		const levelContainer = document.createElement('div');
-		levelContainer.classList.add('level-container');
-		levelSectionDiv.append(levelContainer);
-		data.element = levelContainer;
+let signInAttempted = false;
 
-		// Level image
-		const levelImage = document.createElement('img');
-		levelImage.classList.add('level-img');
-		const videoId = data.video.substr(17);
-		levelImage.src = `https://img.youtube.com/vi/${videoId}/maxresdefault.jpg`;
-		levelImage.addEventListener('click', () => window.open(data.video));
-		levelContainer.append(levelImage);
+onAuthStateChanged(auth, (user) => {
+	if (user || signInAttempted) {
+		return;
+	}
 
-		// Level text info
-		const textContainer = document.createElement('div');
-		textContainer.classList.add('level-text-container');
-		levelContainer.append(textContainer);
+	signInAttempted = true;
+	const password = prompt('Enter password');
+	if (!password) {
+		return;
+	}
 
-		const levelName = document.createElement('h4');
-		levelName.textContent = `#${data.pos} - ${data.name}`;
-		levelName.classList.add('level-name');
-		levelName.onclick = () => {
-			location.href = `admin-level.html?pos=${data.pos}`;
-		};
-		textContainer.append(levelName);
-
-		const levelCreator = document.createElement('p');
-		levelCreator.textContent = data.creator;
-		levelCreator.classList.add('level-creator');
-		textContainer.append(levelCreator);
-
-		// Controls for moving levels up/down
-		const levelControls = document.createElement('div');
-		levelControls.classList.add('level-controls');
-		levelContainer.append(levelControls);
-
-		// Move up
-		if (data.pos > 1) {
-			const upArrow = document.createElement('i');
-			upArrow.classList.add('fa-solid', 'fa-angle-up');
-			upArrow.addEventListener('click', () =>
-				moveLevelUp(data, snapshot),
-			);
-			levelControls.append(upArrow);
-		}
-
-		// Move down
-		if (data.pos < Object.keys(snapshot.val()).length) {
-			const downArrow = document.createElement('i');
-			downArrow.classList.add('fa-solid', 'fa-angle-down');
-			downArrow.addEventListener('click', () =>
-				moveLevelDown(data, snapshot),
-			);
-			levelControls.append(downArrow);
-		}
-
-		// Remove cookie
-		const cookie = document.createElement('h3');
-		cookie.innerHTML = `#${data.pos} - ${data.name}`;
-		cookie.addEventListener('click', () => {
-			document.getElementById('remove-popup-input').value = data.name;
-		});
-		data.cookie = cookie;
-
-		if (!levelsAlreadyGenerated) levelsList.push(data);
-		document.getElementById('remove-popup-cookies-div').append(cookie);
-	});
+	signInWithEmailAndPassword(auth, 'pishka@gmail.com', password).catch(
+		(error) => {
+			console.error('Admin sign-in failed.', error);
+		},
+	);
 });
-
-// Search filter
-levelSearch.addEventListener('input', (e) => {
-	const value = e.target.value.toLowerCase();
-	levelsList.forEach((level) => {
-		const isVisible = level.name.toLowerCase().includes(value);
-		level.element.classList.toggle('hide', !isVisible);
-	});
-});
-
-// Popup handlers
-plus.addEventListener('click', () => {
-	blackScreen.style.display = 'flex';
-	addPopup.style.display = 'flex';
-});
-
-minus.addEventListener('click', () => {
-	blackScreen.style.display = 'flex';
-	removePopup.style.display = 'flex';
-});
-
-addPopupExit.addEventListener('click', closePopups);
-removePopupExit.addEventListener('click', closePopups);
 
 function closePopups() {
 	blackScreen.style.display = 'none';
@@ -178,109 +66,217 @@ function closePopups() {
 	removePopup.style.display = 'none';
 }
 
-// Add new level
-addPopupForm.addEventListener('submit', async (event) => {
+function createLevelRow(level, totalLevels) {
+	const levelContainer = document.createElement('div');
+	levelContainer.className = 'level-container';
+	level.element = levelContainer;
+
+	const levelImage = document.createElement('img');
+	levelImage.className = 'level-img';
+	levelImage.src = getYouTubeThumbnail(level.video, 'maxresdefault');
+	levelImage.alt = `${level.name} thumbnail`;
+	levelImage.addEventListener('click', () => openExternal(level.video));
+	levelContainer.append(levelImage);
+
+	const textContainer = document.createElement('div');
+	textContainer.className = 'level-text-container';
+
+	const levelName = document.createElement('h4');
+	levelName.className = 'level-name';
+	setText(levelName, `#${level.pos} - ${level.name}`);
+	levelName.addEventListener('click', () => {
+		location.href = `admin-level.html?pos=${level.pos}`;
+	});
+	textContainer.append(levelName);
+
+	const levelCreator = document.createElement('p');
+	levelCreator.className = 'level-creator';
+	setText(levelCreator, level.creator, 'Unknown creator');
+	textContainer.append(levelCreator);
+	levelContainer.append(textContainer);
+
+	const controls = document.createElement('div');
+	controls.className = 'level-controls';
+
+	if (level.pos > 1) {
+		const upArrow = document.createElement('i');
+		upArrow.classList.add('fa-solid', 'fa-angle-up');
+		upArrow.addEventListener('click', () => moveLevel(level, -1));
+		controls.append(upArrow);
+	}
+
+	if (level.pos < totalLevels) {
+		const downArrow = document.createElement('i');
+		downArrow.classList.add('fa-solid', 'fa-angle-down');
+		downArrow.addEventListener('click', () => moveLevel(level, 1));
+		controls.append(downArrow);
+	}
+
+	levelContainer.append(controls);
+	return levelContainer;
+}
+
+function createRemoveCookie(level) {
+	const cookie = document.createElement('h3');
+	setText(cookie, `#${level.pos} - ${level.name}`);
+	cookie.addEventListener('click', () => {
+		removePopupInput.value = level.name;
+	});
+	level.cookie = cookie;
+	return cookie;
+}
+
+function filterLevels(searchValue) {
+	const value = searchValue.toLowerCase().trim();
+	levelsList.forEach((level) => {
+		const isVisible = level.name.toLowerCase().includes(value);
+		level.element.classList.toggle('hide', !isVisible);
+		level.cookie.classList.toggle('hide', !isVisible);
+	});
+}
+
+async function moveLevel(level, direction) {
+	const currentIndex = levelsList.findIndex(
+		(candidate) => candidate.name === level.name,
+	);
+	const other = levelsList[currentIndex + direction];
+
+	if (!level || !other) {
+		return;
+	}
+
+	await Promise.all([
+		set(ref(db, `levels/${normalizeKey(level.name)}`), {
+			...level,
+			pos: level.pos + direction,
+		}),
+		set(ref(db, `levels/${normalizeKey(other.name)}`), {
+			...other,
+			pos: level.pos,
+		}),
+	]);
+}
+
+onValue(query(ref(db, 'levels'), orderByChild('pos')), (snapshot) => {
+	levelsList = [];
+	levelSectionDiv.innerHTML = '';
+	removePopupCookiesDiv.innerHTML = '';
+
+	const orderedLevels = [];
+	snapshot.forEach((child) => {
+		const level = child.val();
+		if (level?.name && typeof level.pos === 'number') {
+			orderedLevels.push(level);
+		}
+	});
+
+	orderedLevels.forEach((level) => {
+		levelSectionDiv.append(createLevelRow(level, orderedLevels.length));
+		removePopupCookiesDiv.append(createRemoveCookie(level));
+		levelsList.push(level);
+	});
+
+	filterLevels(levelSearch?.value ?? '');
+});
+
+levelSearch?.addEventListener('input', (event) => {
+	filterLevels(event.target.value);
+});
+
+removePopupInput?.addEventListener('keyup', (event) => {
+	filterLevels(event.target.value);
+});
+
+plus?.addEventListener('click', () => {
+	blackScreen.style.display = 'flex';
+	addPopup.style.display = 'flex';
+});
+
+minus?.addEventListener('click', () => {
+	blackScreen.style.display = 'flex';
+	removePopup.style.display = 'flex';
+});
+
+addPopupExit?.addEventListener('click', closePopups);
+removePopupExit?.addEventListener('click', closePopups);
+
+addPopupForm?.addEventListener('submit', async (event) => {
 	event.preventDefault();
 
-	const name = document.getElementById('add-popup-name').value.trim();
-	const creator = document.getElementById('add-popup-creator').value.trim();
-	const video = document.getElementById('add-popup-video').value.trim();
-	const pos = parseInt(document.getElementById('add-popup-pos').value, 10);
+	const name = byId('add-popup-name').value.trim();
+	const creator = byId('add-popup-creator').value.trim();
+	const video = byId('add-popup-video').value.trim();
+	const pos = Number.parseInt(byId('add-popup-pos').value, 10);
+	const levelKey = normalizeKey(name);
 
-	// Read ordered by pos
+	if (!name || !creator || !video || !Number.isInteger(pos) || pos < 1) {
+		alert('Please fill out all fields with a valid position.');
+		return;
+	}
+
+	if (!levelKey) {
+		alert('Please enter a valid level name.');
+		return;
+	}
+
 	const snap = await get(query(ref(db, 'levels'), orderByChild('pos')));
+	const nextPosition = Math.min(pos, snap.size + 1);
+
+	if ((await get(ref(db, `levels/${levelKey}`))).exists()) {
+		alert('A level with that name already exists.');
+		return;
+	}
 
 	const updates = {};
-
-	// Shift everything with pos >= new pos
 	snap.forEach((child) => {
 		const data = child.val();
-		if (data.pos >= pos) {
+		if (data.pos >= nextPosition) {
 			updates[`levels/${child.key}/pos`] = data.pos + 1;
 		}
 	});
 
-	// Add the new level (keyed by name.toLowerCase like your current schema)
-	updates[`levels/${name.toLowerCase()}`] = { name, creator, video, pos };
+	updates[`levels/${levelKey}`] = {
+		name,
+		creator,
+		video,
+		pos: nextPosition,
+	};
 
 	await update(ref(db), updates);
-
+	addPopupForm.reset();
 	closePopups();
 });
 
-// Remove level
-document.getElementById('remove-popup-input').addEventListener('keyup', (e) => {
-	const value = e.target.value.toLowerCase();
-	levelsList.forEach((level) => {
-		const isVisible = level.name.toLowerCase().includes(value);
-		level.cookie.classList.toggle('hide', !isVisible);
-	});
-});
-
-removePopupForm.addEventListener('submit', async (event) => {
+removePopupForm?.addEventListener('submit', async (event) => {
 	event.preventDefault();
 
-	const nameInput = document
-		.getElementById('remove-popup-input')
-		.value.trim();
-	const key = nameInput.toLowerCase();
+	const nameInput = removePopupInput.value.trim();
+	const key = normalizeKey(nameInput);
+	if (!key) {
+		alert('Please choose a level to remove.');
+		return;
+	}
 
-	// Get the level being removed
-	const currSnap = await get(ref(db, `levels/${key}`));
-	if (!currSnap.exists()) {
+	const currentSnapshot = await get(ref(db, `levels/${key}`));
+	if (!currentSnapshot.exists()) {
 		alert('Level not found.');
 		return;
 	}
 
-	const removedPos = currSnap.val().pos;
-
-	// Read all levels ordered by pos
+	const removedPos = currentSnapshot.val().pos;
 	const snap = await get(query(ref(db, 'levels'), orderByChild('pos')));
-
 	const updates = {};
 
-	// Shift down everyone after it
-	snap.forEach((childSnap) => {
-		const data = childSnap.val();
+	snap.forEach((childSnapshot) => {
+		const data = childSnapshot.val();
 		if (data.pos > removedPos) {
-			updates[`levels/${childSnap.key}/pos`] = data.pos - 1;
+			updates[`levels/${childSnapshot.key}/pos`] = data.pos - 1;
 		}
 	});
 
-	// Delete the removed one
 	updates[`levels/${key}`] = null;
 
 	await update(ref(db), updates);
-
-	// closePopups();
+	removePopupForm.reset();
+	closePopups();
 });
-
-// Helper functions for moving levels
-function moveLevelUp(level, snapshot) {
-	const prev = levelsList[level.pos - 2];
-	swapPositions(level, prev, -1);
-}
-
-function moveLevelDown(level, snapshot) {
-	const next = levelsList[level.pos];
-	swapPositions(level, next, +1);
-}
-
-function swapPositions(curr, other, offset) {
-	// Update current
-	set(ref(db, `levels/${curr.name.toLowerCase()}`), {
-		...curr,
-		pos: curr.pos + offset,
-	});
-
-	// Update swapped
-	set(ref(db, `levels/${other.name.toLowerCase()}`), {
-		...other,
-		pos: curr.pos,
-	});
-
-	// Swap locally
-	const temp = levelsList[curr.pos - 1 + offset];
-	levelsList[curr.pos - 1 + offset] = levelsList[curr.pos - 1];
-	levelsList[curr.pos - 1] = temp;
-}

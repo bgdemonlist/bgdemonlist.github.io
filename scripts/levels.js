@@ -1,117 +1,145 @@
-// Import the functions you need from the SDKs you need
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getDatabase, ref, get, push, onValue, remove, query, orderByKey, orderByChild, orderByValue } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js"
-import { getAuth, createUserWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
-// TODO: Add SDKs for Firebase products that you want to use
-// https://firebase.google.com/docs/web/setup#available-libraries
+import {
+	get,
+	orderByChild,
+	query,
+	ref,
+} from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
+import {
+	byId,
+	db,
+	getYouTubeVideoId,
+	initAuthNavigation,
+	normalizeKey,
+	setText,
+} from './app-common.js';
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-    databaseURL: "https://bulgarian-demonlist-default-rtdb.europe-west1.firebasedatabase.app/",
-    apiKey: "AIzaSyBR-ImRkDyL_K3mwur6en4sXjj2WB9a-cs",
-    authDomain: "bulgarian-demonlist.firebaseapp.com",
-    projectId: "bulgarian-demonlist",
-    storageBucket: "bulgarian-demonlist.appspot.com",
-    messagingSenderId: "580475986041",
-    appId: "1:580475986041:web:82cc42325c06f6aa8f34a8"
-};
+const levelName = byId('levelName');
+const levelCreator = byId('levelCreator');
+const levelVideo = byId('level-video');
+const score = byId('score');
+const victorCount = byId('victor-count');
+const victorsContainer = byId('victors-container');
 
+initAuthNavigation();
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getDatabase(app);
-const auth = getAuth();
-const ul = document.getElementById("nav_links");
-onAuthStateChanged(auth, (user) => {
-    if (user) {
-        const uid = user.uid;
-        ul.innerHTML =
-            `
-      <li><a href="admin.html">Admin</a></li>
-      <li><a href="roulette.html">Roulette</a></li>
-      <li><a href="leaderboard.html">Leaderboard</a></li>
-      `
-        console.log("signed in")
-    } else {
-        ul.innerHTML =
-            `
-        <li><a href="roulette.html">Roulette</a></li>
-        <li><a href="leaderboard.html">Leaderboard</a></li>
-        `
-        console.log("not signed in")
-    }
-});
+function calculatePoints(pos) {
+	if (pos <= 20) {
+		return 322.2 * 0.945 ** (pos - 1) + 0.8;
+	}
 
-function calculatePoints(pos, n) {
-    if (pos <= 20) {
-        return 322.2 * (0.945 ** (pos - 1)) + 0.8
-    } else if (pos <= 400) {
-        return 106.2 * (0.9882 ** (pos - 20))
-    } else return 1
+	if (pos <= 400) {
+		return 106.2 * 0.9882 ** (pos - 20);
+	}
+
+	return 1;
 }
 
+function renderVictors(records) {
+	if (!victorsContainer) {
+		return;
+	}
 
+	victorsContainer.innerHTML = '';
 
-const urlParams = (new URL(document.location)).searchParams
-const position = urlParams.get("pos")
+	const title = document.createElement('div');
+	title.id = 'victors-title';
 
-// get(ref(db, "levels")).then(snapshot => {
-//     snapshot.forEach(child => {
-//         if (child.val().pos == position) {
-//             document.getElementById("victors-container").innerHTML += "<a><h2>No records yet...</h2></a>"
-//             document.getElementById("levelName").innerHTML = child.val().name
-//             document.title = "#" + position + " - " + child.val().name
-//             document.getElementById("levelCreator").innerHTML = "By " + child.val().creator
-//             let levelVid = child.val().video.substr(17)
-//             document.getElementById("level-video").src = "https://www.youtube.com/embed/" + levelVid
-//             document.getElementById("score").innerHTML = 323 - (position - 1) * 6
-//             document.getElementById("victor-count").innerHTML = Object.keys(child.val().records).length + " victors"
-//             if (child.val().records) {
-//                 document.getElementById("victors-container").innerHTML = '<div id="victors-title"><h2>Holder</h2></div>'
-//                 for (let i = 0; i < Object.keys(child.val().records).length; i++) {
-//                     let name = Object.keys(child.val().records)[i]
-//                     document.getElementById("victors-container").innerHTML +=
-//                         `
-//                     <a href="${child.val().records[name].video}"><h2 class="victor">${child.val().records[name].name}</h2></a>
-//                     `
+	const titleHeading = document.createElement('h2');
+	setText(titleHeading, 'Holder');
+	title.append(titleHeading);
+	victorsContainer.append(title);
 
-//                 }
-//             }
+	if (!records.length) {
+		const emptyState = document.createElement('a');
+		const message = document.createElement('h2');
+		setText(message, 'No records yet...');
+		emptyState.append(message);
+		victorsContainer.append(emptyState);
+		return;
+	}
 
+	records.forEach((record) => {
+		const link = document.createElement('a');
+		link.href = record.video || '#';
+		if (record.video) {
+			link.target = '_blank';
+			link.rel = 'noopener noreferrer';
+		}
 
-//         }
-//     })
-// })
+		const holder = document.createElement('h2');
+		holder.className = 'victor';
+		setText(holder, record.name, 'Unknown');
+		link.append(holder);
+		victorsContainer.append(link);
+	});
+}
 
+async function loadLevel() {
+	const position = Number(new URL(document.location).searchParams.get('pos'));
+	if (!position) {
+		setText(levelName, 'Level not found');
+		setText(levelCreator, 'Invalid or missing position.');
+		renderVictors([]);
+		return;
+	}
 
-get(ref(db, "levels")).then(snapshot => {
-    snapshot.forEach(child => {
-        if (child.val().pos == position) {
-            document.getElementById("victors-container").innerHTML += "<a><h2>No records yet...</h2></a>"
-            document.getElementById("levelName").innerHTML = child.val().name
-            document.title = "#" + position + " - " + child.val().name
-            document.getElementById("levelCreator").innerHTML = "By " + child.val().creator
-            let levelVid = child.val().video.substr(17)
-            document.getElementById("level-video").src = "https://www.youtube.com/embed/" + levelVid
-            let temp = calculatePoints(position, Object.keys(snapshot.val()).length).toFixed(2)
-            console.log(Object.keys(snapshot.val()).length)
-            if (temp < 0) {
-                temp = 0
-            }
-            document.getElementById("score").innerHTML = temp
-            document.getElementById("victor-count").innerHTML = Object.keys(child.val().records).length + " victors"
-            if (child.val().records) {
-                document.getElementById("victors-container").innerHTML = '<div id="victors-title"><h2>Holder</h2></div>'
-                get(query(ref(db, "levels/" + child.val().name.toLowerCase() + "/records"), orderByChild('recordNum'))).then(recordsSnap => {
-                    recordsSnap.forEach(record => {
-                        console.log(record.val())
-                        document.getElementById("victors-container").innerHTML +=
-                            `
-                    <a href="${record.val().video}"><h2 class="victor">${record.val().name}</h2></a>
-                    `
-                    })
-                })
-            }
-        }
-    })
-})
+	const levelsSnapshot = await get(ref(db, 'levels'));
+	if (!levelsSnapshot.exists()) {
+		setText(levelName, 'Level not found');
+		setText(levelCreator, 'No levels are available right now.');
+		renderVictors([]);
+		return;
+	}
+
+	let selectedLevel = null;
+	levelsSnapshot.forEach((child) => {
+		const level = child.val();
+		if (level?.pos === position) {
+			selectedLevel = level;
+		}
+	});
+
+	if (!selectedLevel) {
+		setText(levelName, 'Level not found');
+		setText(levelCreator, `There is no level at #${position}.`);
+		renderVictors([]);
+		return;
+	}
+
+	setText(levelName, selectedLevel.name);
+	setText(levelCreator, `By ${selectedLevel.creator ?? 'Unknown creator'}`);
+	document.title = `#${position} - ${selectedLevel.name}`;
+
+	const videoId = getYouTubeVideoId(selectedLevel.video);
+	if (levelVideo) {
+		levelVideo.src = videoId
+			? `https://www.youtube.com/embed/${videoId}`
+			: '';
+		levelVideo.title = selectedLevel.name ?? 'Level video';
+	}
+
+	setText(score, calculatePoints(position).toFixed(2));
+
+	const recordsSnapshot = await get(
+		query(
+			ref(db, `levels/${normalizeKey(selectedLevel.name)}/records`),
+			orderByChild('recordNum'),
+		),
+	);
+	const records = [];
+	recordsSnapshot.forEach((record) => {
+		if (record.val()) {
+			records.push(record.val());
+		}
+	});
+
+	setText(victorCount, `${records.length} victors`);
+	renderVictors(records);
+}
+
+loadLevel().catch((error) => {
+	console.error('Failed to load level details.', error);
+	setText(levelName, 'Level not found');
+	setText(levelCreator, 'Something went wrong while loading this page.');
+	renderVictors([]);
+});
