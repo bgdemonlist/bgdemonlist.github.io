@@ -95,7 +95,8 @@ function calculatePoints(pos) {
 
 function getSortedRecords(player) {
 	return Object.values(player.records ?? {}).sort(
-		(a, b) => getPositionFromLevelName(a.name) - getPositionFromLevelName(b.name),
+		(a, b) =>
+			getPositionFromLevelName(a.name) - getPositionFromLevelName(b.name),
 	);
 }
 
@@ -294,12 +295,11 @@ async function loadData() {
 				: currentHardest;
 		}, records[0]);
 
-		const points =
-			player.name === 'soletki'
-				? Infinity
-				: records.reduce((total, record) => {
-						return total + calculatePoints(getPositionFromLevelName(record.name));
-					}, 0);
+		const points = records.reduce((total, record) => {
+			return (
+				total + calculatePoints(getPositionFromLevelName(record.name))
+			);
+		}, 0);
 
 		playerList.push({
 			...player,
