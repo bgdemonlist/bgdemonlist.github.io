@@ -1,6 +1,7 @@
 import {
 	ref,
 	set,
+	update,
 	get,
 	query,
 	orderByChild,
@@ -26,6 +27,7 @@ const levelVideo = byId('level-video');
 const score = byId('score');
 const victorCount = byId('victor-count');
 const victorsContainer = byId('victors-container');
+let currentLevel = null;
 
 initAuthNavigation();
 
@@ -46,10 +48,122 @@ function setPopupVisibility(isVisible) {
 	addPopup.style.display = isVisible ? 'flex' : 'none';
 }
 
+function buildUserKeyLookup(usersSnapshot) {
+	const userKeyLookup = new Map();
+
+	usersSnapshot.forEach((userSnapshot) => {
+		const userValue = userSnapshot.val() ?? {};
+		const userKey = userSnapshot.key;
+		const nameKey = normalizeKey(userValue.name || userKey);
+
+		if (nameKey && !userKeyLookup.has(nameKey)) {
+			userKeyLookup.set(nameKey, userKey);
+		}
+
+		const keyKey = normalizeKey(userKey);
+		if (keyKey && !userKeyLookup.has(keyKey)) {
+			userKeyLookup.set(keyKey, userKey);
+		}
+	});
+
+	return userKeyLookup;
+}
+
+function extractRecords(recordsSnapshot, userKeyLookup) {
+	const records = [];
+
+	recordsSnapshot.forEach((recordSnapshot) => {
+		const record = recordSnapshot.val();
+		if (!record?.name) {
+			return;
+		}
+
+		const nameKey = normalizeKey(record.name);
+		const userKey = userKeyLookup.get(nameKey) || record.name;
+
+		records.push({
+			...record,
+			levelRecordKey: recordSnapshot.key,
+			userKey,
+		});
+	});
+
+	return records;
+}
+
+async function deleteRecord(record, buttonElement) {
+	if (!currentLevel?.name) {
+		alert('Level not loaded yet.');
+		return;
+	}
+
+	if (
+		!confirm(
+			`Delete record for "${record.name}" from this level and the user's profile?`,
+		)
+	) {
+		return;
+	}
+
+	if (buttonElement) {
+		buttonElement.disabled = true;
+	}
+
+	try {
+		const levelKey = normalizeKey(currentLevel.name);
+		const [recordsSnapshot, usersSnapshot] = await Promise.all([
+			get(query(ref(db, `levels/${levelKey}/records`), orderByChild('recordNum'))),
+			get(ref(db, 'users')),
+		]);
+
+		const userKeyLookup = buildUserKeyLookup(usersSnapshot);
+		const allRecords = extractRecords(recordsSnapshot, userKeyLookup);
+		const targetRecord = allRecords.find(
+			(candidate) => candidate.levelRecordKey === record.levelRecordKey,
+		);
+
+		if (!targetRecord) {
+			alert('Record no longer exists. Refreshing...');
+			await loadLevel();
+			return;
+		}
+
+		const remainingRecords = allRecords.filter(
+			(candidate) => candidate.levelRecordKey !== targetRecord.levelRecordKey,
+		);
+		const updates = {};
+
+		updates[`levels/${levelKey}/records/${targetRecord.levelRecordKey}`] = null;
+		updates[`users/${targetRecord.userKey}/records/${levelKey}`] = null;
+
+		remainingRecords.forEach((entry, index) => {
+			const resolvedUserKey =
+				userKeyLookup.get(normalizeKey(entry.name)) || entry.userKey || entry.name;
+
+			updates[`levels/${levelKey}/records/${entry.levelRecordKey}/recordNum`] = index;
+			updates[`users/${resolvedUserKey}/records/${levelKey}/first`] = index === 0;
+		});
+
+		await update(ref(db), updates);
+		await loadLevel();
+	} catch (error) {
+		console.error('Failed to delete record.', error);
+		alert('Could not delete this record. Please try again.');
+	} finally {
+		if (buttonElement) {
+			buttonElement.disabled = false;
+		}
+	}
+}
+
 function renderVictors(records) {
+	if (!victorsContainer) {
+		return;
+	}
+
 	victorsContainer.innerHTML = '';
 
-	const title = document.createElement('div');
+	const title = document.createElement('li');
 	title.id = 'victors-title';
 	const titleHeading = document.createElement('h2');
 	setText(titleHeading, 'Holder');
@@ -57,16 +171,22 @@ function renderVictors(records) {
 	victorsContainer.append(title);
 
 	if (!records.length) {
-		const emptyState = document.createElement('a');
+		const emptyState = document.createElement('li');
+		emptyState.className = 'victor-item';
 		const heading = document.createElement('h2');
+		heading.className = 'victor';
 		setText(heading, 'No records yet...');
 		emptyState.append(heading);
 		victorsContainer.append(emptyState);
 		return;
 	}
 
-	records.forEach((record) => {
+	records.forEach((record, index) => {
+		const row = document.createElement('li');
+		row.className = `victor-row${index === 0 ? ' first-record' : ''}`;
+
 		const link = document.createElement('a');
+		link.className = 'victor-link';
 		link.href = record.video || '#';
 		if (record.video) {
 			link.target = '_blank';
@@ -77,12 +197,23 @@ function renderVictors(records) {
 		holder.className = 'victor';
 		setText(holder, record.name, 'Unknown');
 		link.append(holder);
-		victorsContainer.append(link);
+
+		const deleteButton = document.createElement('button');
+		deleteButton.type = 'button';
+		deleteButton.className = 'victor-delete-btn';
+		setText(deleteButton, 'Delete');
+		deleteButton.addEventListener('click', () => {
+			deleteRecord(record, deleteButton);
+		});
+
+		row.append(link, deleteButton);
+		victorsContainer.append(row);
 	});
 }
 
 async function loadLevel() {
 	if (!position) {
+		currentLevel = null;
 		setText(levelName, 'Level not found');
 		setText(levelCreator, 'Invalid or missing position.');
 		renderVictors([]);
@@ -100,12 +231,14 @@ async function loadLevel() {
 	});
 
 	if (!selectedLevel) {
+		currentLevel = null;
 		setText(levelName, 'Level not found');
 		setText(levelCreator, `There is no level at #${position}.`);
 		renderVictors([]);
 		return;
 	}
 
+	currentLevel = selectedLevel;
 	setText(levelName, selectedLevel.name);
 	setText(levelCreator, `By ${selectedLevel.creator ?? 'Unknown creator'}`);
 	document.title = `#${position} - ${selectedLevel.name}`;
@@ -114,18 +247,17 @@ async function loadLevel() {
 	levelVideo.src = videoId ? `https://www.youtube.com/embed/${videoId}` : '';
 	setText(score, calculatePoints(position).toFixed(2));
 
-	const recordsSnapshot = await get(
-		query(
-			ref(db, `levels/${normalizeKey(selectedLevel.name)}/records`),
-			orderByChild('recordNum'),
+	const [recordsSnapshot, usersSnapshot] = await Promise.all([
+		get(
+			query(
+				ref(db, `levels/${normalizeKey(selectedLevel.name)}/records`),
+				orderByChild('recordNum'),
+			),
 		),
-	);
-	const records = [];
-	recordsSnapshot.forEach((record) => {
-		if (record.val()) {
-			records.push(record.val());
-		}
-	});
+		get(ref(db, 'users')),
+	]);
+	const userKeyLookup = buildUserKeyLookup(usersSnapshot);
+	const records = extractRecords(recordsSnapshot, userKeyLookup);
 
 	setText(victorCount, `${records.length} victors`);
 	renderVictors(records);

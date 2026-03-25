@@ -9,10 +9,11 @@
 		<link rel="stylesheet" href="css/global.css" />
 		<script src="scripts/leaderboard.js" type="module"></script>
 		<script src="scripts/global.js" type="module"></script>
+		<script src="https://kit.fontawesome.com/811caf8c84.js" crossorigin="anonymous"></script>
 	</head>
 	<body>
 		<header>
-			<h3 id="logo"><a href="https://bgdemonlist.github.io/">BDL</a></h3>
+			<h3 id="logo"><a href="/">BGDL</a></h3>
 			<nav>
 				<ul id="nav_links">
 					<li><a href="leaderboard.html">Leaderboard</a></li>
@@ -70,5 +71,38 @@
 				</div>
 			</div>
 		</section>
+		<div id="edit-player-overlay" class="hide">
+			<div id="edit-player-modal">
+				<div id="edit-player-top">
+					<h2>Edit Player</h2>
+					<button id="edit-player-close" type="button" aria-label="Close">
+						<i class="fa-solid fa-xmark"></i>
+					</button>
+				</div>
+				<form id="edit-player-form">
+					<label for="edit-player-name">Username</label>
+					<input id="edit-player-name" maxlength="32" required />
+
+					<label for="edit-player-image">Profile Picture (JPG, PNG, WEBP)</label>
+					<input
+						id="edit-player-image"
+						type="file"
+						accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+					/>
+
+					<label for="edit-player-province">Province</label>
+					<select id="edit-player-province"></select>
+
+					<p id="edit-player-hint">
+						Changing username updates all of this player's records.
+					</p>
+
+					<div id="edit-player-actions">
+						<button id="edit-player-cancel" type="button">Cancel</button>
+						<button id="edit-player-save" type="submit">Save</button>
+					</div>
+				</form>
+			</div>
+		</div>
 	</body>
 </html>

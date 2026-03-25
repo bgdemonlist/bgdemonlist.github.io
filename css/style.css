@@ -1,119 +1,138 @@
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
-
-#levels-container{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
+#levels-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 16px;
+	width: min(980px, 94%);
+	margin: 28px auto 40px;
 }
 
-.level-container{
-    margin-top: 20px;
-    width: 700px;
-    height: 150px;
-    border: rgba(255, 255, 255, 0.432);
-    border-width: 1px;
-    border-style: dashed;
-    display: flex;
-    box-shadow: 0 0 15px;
-    overflow: hidden;
+.level-container {
+	width: 100%;
+	max-width: 700px;
+	min-height: 150px;
+	display: flex;
+	align-items: center;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-lg);
+	background: var(--surface);
+	box-shadow: var(--shadow);
+	overflow: hidden;
+	transition:
+		transform 0.25s ease,
+		border-color 0.25s ease,
+		box-shadow 0.25s ease;
 }
 
-.level-img{
-    position: relative;
-    width: 206.52px;
-    height: 116.16px;
-    top: 50%;
-    transform: translate(0, -50%);
-    margin: 0 17px;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 0 10px;
-
+.level-img {
+	width: 206.52px;
+	height: 116.16px;
+	margin: 0 18px;
+	border-radius: 12px;
+	object-fit: cover;
+	cursor: pointer;
+	transition:
+		transform 0.25s ease,
+		box-shadow 0.25s ease;
+	box-shadow: 0 10px 18px rgba(0, 0, 0, 0.28);
 }
 
-.level-img:hover{
-    transition: all 0.3s ease;
-    top: 40%;
-    transform: translate(0, -40%);
+.level-img:hover {
+	transform: translateY(-3px) scale(1.02);
+	box-shadow: 0 14px 22px rgba(0, 0, 0, 0.38);
 }
 
-.level-name{
-    position: relative;
-    font-family: 'Montserrat', sans-serif;
-    color: #edf0f1;
-    font-size: 30px;
-    cursor: pointer;
+.level-text-container {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-right: 16px;
 }
 
-.level-creator{
-    position: relative;
-    font-family: 'Montserrat', sans-serif;
-    color: rgb(164, 164, 164);
-    font-size: 20px;
-    font-style: italic;
-    cursor: default;
+.level-name {
+	color: var(--text);
+	font-size: 1.8rem;
+	font-weight: 700;
+	cursor: pointer;
+	transition: color 0.2s ease;
 }
 
-.level-text-container{
-    position: relative;
-    top: 20px;
+.level-name:hover {
+	color: var(--accent-strong);
 }
 
-#search-bar{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 0px 10px;
-    margin: 20px;
-    box-shadow: 0 0 15px;
-    background-color: none;
-    border: rgba(255, 255, 255, 0.432);
-    border-width: 1px;
-    border-style: dashed;
+.level-creator {
+	color: var(--text-muted);
+	font-size: 1.05rem;
+	font-style: italic;
 }
 
-#search-bar i{
-    font-size: 20px;
-    color: white;
+#search-bar {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	width: min(460px, 100%);
+	padding: 12px 16px;
+	margin-bottom: 10px;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-md);
+	background: var(--surface);
+	box-shadow: var(--shadow-soft);
+	transition:
+		border-color 0.2s ease,
+		box-shadow 0.2s ease;
 }
 
-#search-bar input{
-    padding: 10px;
-    font-size: 20px;
-    outline: none;
-    border: none;
-    background: none;
-    color: white;
+#search-bar:focus-within {
+	border-color: var(--accent);
+	box-shadow: var(--focus-ring), var(--shadow-soft);
+}
+
+#search-bar i {
+	font-size: 1rem;
+	color: var(--accent);
+}
+
+#search-bar input {
+	flex: 1;
+	min-width: 0;
+	padding: 0;
+	border: none;
+	background: transparent;
+	color: var(--text);
+	font-size: 1rem;
+}
+
+#search-bar input:focus-visible {
+	box-shadow: none;
+}
+
+#search-bar input::placeholder {
+	color: var(--text-dim);
 }
 
 @media only screen and (max-width: 750px) {
-    .level-container{
-        width: 80%;
-        height: 110px;
-    }
-    .level-name{
-        font-size: 15px;
-    }
-    .level-creator{
-        font-size: 15px;
-    }
-    .level-img{
-        width: 100px;
-        height: 56px;
-    }
-    #logo{
-        font-size: 20px;
-    }
-    header li, a, button{
-        font-size: 15px
-    }
-    .cta button {
-        margin: 0;
-        padding: 9px 20px;
-    }
-    header{
-        padding: 10px;
-    }
-  }
+	#levels-container {
+		width: 96%;
+		margin-top: 20px;
+	}
+
+	.level-container {
+		min-height: 110px;
+		border-radius: var(--radius-md);
+	}
+
+	.level-name {
+		font-size: 1.1rem;
+	}
+
+	.level-creator {
+		font-size: 0.9rem;
+	}
+
+	.level-img {
+		width: 110px;
+		height: 62px;
+		margin: 0 12px;
+	}
+}

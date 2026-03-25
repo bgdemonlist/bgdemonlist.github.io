@@ -41,7 +41,7 @@ function renderVictors(records) {
 
 	victorsContainer.innerHTML = '';
 
-	const title = document.createElement('div');
+	const title = document.createElement('li');
 	title.id = 'victors-title';
 
 	const titleHeading = document.createElement('h2');
@@ -50,16 +50,22 @@ function renderVictors(records) {
 	victorsContainer.append(title);
 
 	if (!records.length) {
-		const emptyState = document.createElement('a');
+		const emptyState = document.createElement('li');
+		emptyState.className = 'victor-item';
 		const message = document.createElement('h2');
+		message.className = 'victor';
 		setText(message, 'No records yet...');
 		emptyState.append(message);
 		victorsContainer.append(emptyState);
 		return;
 	}
 
-	records.forEach((record) => {
+	records.forEach((record, index) => {
+		const item = document.createElement('li');
+		item.className = `victor-item${index === 0 ? ' first-record' : ''}`;
+
 		const link = document.createElement('a');
+		link.className = 'victor-link';
 		link.href = record.video || '#';
 		if (record.video) {
 			link.target = '_blank';
@@ -70,7 +76,8 @@ function renderVictors(records) {
 		holder.className = 'victor';
 		setText(holder, record.name, 'Unknown');
 		link.append(holder);
-		victorsContainer.append(link);
+		item.append(link);
+		victorsContainer.append(item);
 	});
 }
 

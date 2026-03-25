@@ -264,13 +264,23 @@ removePopupForm?.addEventListener('submit', async (event) => {
 	}
 
 	const removedPos = currentSnapshot.val().pos;
-	const snap = await get(query(ref(db, 'levels'), orderByChild('pos')));
+	const [snap, usersSnapshot] = await Promise.all([
+		get(query(ref(db, 'levels'), orderByChild('pos'))),
+		get(ref(db, 'users')),
+	]);
 	const updates = {};
 
 	snap.forEach((childSnapshot) => {
 		const data = childSnapshot.val();
 		if (data.pos > removedPos) {
 			updates[`levels/${childSnapshot.key}/pos`] = data.pos - 1;
+		}
+	});
+
+	usersSnapshot.forEach((userSnapshot) => {
+		const userData = userSnapshot.val();
+		if (userData?.records && userData.records[key]) {
+			updates[`users/${userSnapshot.key}/records/${key}`] = null;
 		}
 	});
 
