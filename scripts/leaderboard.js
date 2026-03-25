@@ -87,6 +87,10 @@ const levelPositionByName = new Map();
 let selectedPlayerIndex = -1;
 let isSignedIn = false;
 let isSavingPlayerEdit = false;
+const playerIconDataCache = new Map();
+const playerIconRequestCache = new Map();
+let defaultPlayerIconUrlPromise = null;
+let latestPlayerIconRenderRequest = 0;
 
 initAuthNavigation();
 
@@ -231,21 +235,24 @@ async function setPlayerIcon(player) {
 		return;
 	}
 
+	const requestId = ++latestPlayerIconRenderRequest;
 	const iconData = await getPlayerIconData(
 		getPlayerIconBaseName(player),
 		player.iconExtension,
 	);
+	if (requestId !== latestPlayerIconRenderRequest) {
+		return;
+	}
+
 	if (iconData?.url) {
+		player.iconExtension = iconData.extension;
 		playerIcon.src = iconData.url;
 		return;
 	}
 
-	try {
-		playerIcon.src = await getDownloadURL(
-			sRef(storage, 'player-icons/default-user-icon.png'),
-		);
-	} catch {
-		playerIcon.src = '';
+	const defaultIconUrl = await getDefaultPlayerIconUrl();
+	if (requestId === latestPlayerIconRenderRequest) {
+		playerIcon.src = defaultIconUrl || '';
 	}
 }
 
@@ -276,21 +283,98 @@ async function getPlayerIconData(playerName, preferredExtension = '') {
 		return null;
 	}
 
-	const candidates = getAllowedIconExtensions(preferredExtension);
-	for (const extension of candidates) {
-		try {
-			const iconRef = sRef(storage, `player-icons/${safeName}.${extension}`);
-			const url = await getDownloadURL(iconRef);
-			return {
-				url,
-				extension,
-			};
-		} catch {
-			// Try next extension.
-		}
+	if (playerIconDataCache.has(safeName)) {
+		return playerIconDataCache.get(safeName);
 	}
 
-	return null;
+	if (playerIconRequestCache.has(safeName)) {
+		return playerIconRequestCache.get(safeName);
+	}
+
+	const requestPromise = (async () => {
+		const candidates = getAllowedIconExtensions(preferredExtension);
+		for (const extension of candidates) {
+			try {
+				const iconRef = sRef(storage, `player-icons/${safeName}.${extension}`);
+				const url = await getDownloadURL(iconRef);
+				return {
+					url,
+					extension,
+				};
+			} catch {
+				// Try next extension.
+			}
+		}
+
+		return null;
+	})()
+		.then((iconData) => {
+			playerIconDataCache.set(safeName, iconData);
+			return iconData;
+		})
+		.finally(() => {
+			playerIconRequestCache.delete(safeName);
+		});
+
+	playerIconRequestCache.set(safeName, requestPromise);
+	return requestPromise;
+}
+
+async function getDefaultPlayerIconUrl() {
+	if (!defaultPlayerIconUrlPromise) {
+		defaultPlayerIconUrlPromise = getDownloadURL(
+			sRef(storage, 'player-icons/default-user-icon.png'),
+		).catch(() => '');
+	}
+
+	return defaultPlayerIconUrlPromise;
+}
+
+function clearPlayerIconCacheForNames(names = []) {
+	names.forEach((name) => {
+		const safeName = String(name || '').trim();
+		if (!safeName) {
+			return;
+		}
+
+		playerIconDataCache.delete(safeName);
+		playerIconRequestCache.delete(safeName);
+	});
+}
+
+function prefetchPlayerIcons(limit = 20) {
+	const playersToPrefetch = playerList
+		.filter((player) => getPlayerIconBaseName(player))
+		.slice(0, limit);
+
+	if (!playersToPrefetch.length) {
+		return;
+	}
+
+	const maxConcurrency = Math.min(4, playersToPrefetch.length);
+	let cursor = 0;
+
+	for (let worker = 0; worker < maxConcurrency; worker += 1) {
+		(async () => {
+			while (cursor < playersToPrefetch.length) {
+				const currentIndex = cursor;
+				cursor += 1;
+				const player = playersToPrefetch[currentIndex];
+
+				try {
+					const iconData = await getPlayerIconData(
+						getPlayerIconBaseName(player),
+						player.iconExtension,
+					);
+					if (iconData?.extension && !player.iconExtension) {
+						player.iconExtension = iconData.extension;
+					}
+				} catch {
+					// No-op: prefetch should never block UI rendering.
+				}
+			}
+		})();
+	}
 }
 
 function renderCompletions(records) {
@@ -475,6 +559,7 @@ function renderLeaderboard() {
 
 	buildProvinceDropdown();
 	applyFilters();
+	prefetchPlayerIcons();
 }
 
 function closeEditPlayerPopup() {
@@ -759,6 +844,13 @@ async function handleEditPlayerSubmit(event) {
 			await update(ref(db), updates);
 		}
 
+		clearPlayerIconCacheForNames([
+			oldName,
+			oldUserKey,
+			oldIconBaseName,
+			newName,
+			finalIconBaseName,
+		]);
 		closeEditPlayerPopup();
 		await refreshLeaderboard(newName);
 	} catch (error) {
