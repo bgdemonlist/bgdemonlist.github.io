@@ -1,0 +1,144 @@
+#guidelines-container {
+	width: min(1120px, 94%);
+	margin: 28px auto 48px;
+	display: flex;
+	flex-direction: column;
+	gap: 22px;
+}
+
+#guidelines-hero {
+	padding: 28px;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-lg);
+	background: var(--surface);
+	box-shadow: var(--shadow);
+}
+
+.eyebrow {
+	color: var(--accent-strong);
+	font-size: 0.84rem;
+	font-weight: 800;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+#guidelines-hero h1 {
+	margin-top: 8px;
+	color: var(--text);
+	font-size: clamp(2.2rem, 6vw, 4rem);
+	font-weight: 800;
+}
+
+#guidelines-hero p:last-child {
+	max-width: 720px;
+	margin-top: 10px;
+	color: var(--text-muted);
+	font-size: 1.08rem;
+	line-height: 1.65;
+}
+
+#guidelines-sheet {
+	display: flex;
+	flex-direction: column;
+	gap: 0;
+	padding: 10px 28px;
+	border: 1px solid var(--border);
+	border-radius: var(--radius-lg);
+	background: var(--surface);
+	box-shadow: var(--shadow);
+}
+
+.guideline-section {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 24px 0;
+	border-bottom: 1px solid var(--border);
+}
+
+.guideline-section:last-child {
+	border-bottom: none;
+}
+
+.guideline-section-heading {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+}
+
+.guideline-icon {
+	flex: 0 0 auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	border: 1px solid var(--accent);
+	border-radius: var(--radius-sm);
+	background: var(--accent-soft);
+	color: var(--accent-strong);
+	font-size: 1.15rem;
+}
+
+.guideline-section h2 {
+	color: var(--text);
+	font-size: 1.42rem;
+	font-weight: 800;
+}
+
+.guideline-section ul {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	padding-left: 64px;
+	color: var(--text-muted);
+	line-height: 1.55;
+}
+
+.guideline-section li::marker {
+	color: var(--accent);
+}
+
+.guideline-section a {
+	color: var(--accent-strong);
+	font-weight: 800;
+	text-decoration: underline;
+	text-decoration-thickness: 2px;
+	text-underline-offset: 3px;
+}
+
+.guideline-section a:hover {
+	color: var(--accent);
+}
+
+.guideline-note p {
+	max-width: 820px;
+	padding-left: 64px;
+	color: var(--text-muted);
+	line-height: 1.6;
+}
+
+@media only screen and (max-width: 760px) {
+	#guidelines-container {
+		width: 96%;
+		margin-top: 20px;
+	}
+
+	#guidelines-hero,
+	#guidelines-sheet {
+		padding: 18px;
+	}
+
+	.guideline-section {
+		padding: 18px 0;
+	}
+
+	.guideline-section ul,
+	.guideline-note p {
+		padding-left: 20px;
+	}
+
+	#guidelines-hero p:last-child {
+		font-size: 0.98rem;
+	}
+}

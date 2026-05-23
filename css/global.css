@@ -208,7 +208,8 @@ nav {
 	gap: 10px;
 }
 
-#theme-toggle {
+#theme-toggle,
+#language-toggle {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -227,11 +228,16 @@ nav {
 		color 0.2s ease;
 }
 
+#language-toggle {
+	min-width: 48px;
+}
+
 #theme-toggle i {
 	pointer-events: none;
 }
 
-#theme-toggle:hover {
+#theme-toggle:hover,
+#language-toggle:hover {
 	border-color: var(--accent);
 	background: var(--accent-soft);
 	color: var(--accent-strong);
@@ -291,7 +297,8 @@ button:disabled {
 		padding: 7px 10px;
 	}
 
-	#theme-toggle {
+	#theme-toggle,
+	#language-toggle {
 		font-size: 0.75rem;
 		padding: 7px 11px;
 	}
