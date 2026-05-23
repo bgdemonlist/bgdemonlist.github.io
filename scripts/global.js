@@ -15,8 +15,8 @@ const TRANSLATIONS = {
 			'BG Demon Roulette': 'BG Demon Рулетка',
 			'BG Demon List': 'BG Demon List',
 			'These are the official BG Demon List rules for submitting records, placing levels, and handling difficulty changes.':
-				'Това са официалните правила на BG Demon List за изпращане на рекорди, поставяне на нива и промени в трудността.',
-			'Submission Rules': 'Правила за изпращане',
+				'Това са официалните правила на BG Demon List за добавяне на рекорди, поставяне на нива и промени в трудността.',
+			'Submission Rules': 'Правила за добавяне на рекорди',
 			'Video evidence is required for completions.':
 				'За completion-и е нужно видео доказателство.',
 			'Rare exceptions can be made for old completions if the player is trusted enough.':
@@ -27,9 +27,9 @@ const TRANSLATIONS = {
 				'Рекорди с clickbot-ове или click sound mod-ове няма да бъдат приемани.',
 			'For solo 2-player completions, handcam footage is required.':
 				'За solo 2-player completion-и е нужен handcam.',
-			'Allowed Gameplay': 'Позволен gameplay',
+			'Gameplay': 'Позволен gameplay',
 			'Allowed hacks match':
-				'Позволените hacks са същите като тези в правилата на',
+				'Позволените хакове са същите като тези в правилата на',
 			Pointercrate: 'Pointercrate',
 			"'s rules.": '.',
 			"Allowed hacks match Pointercrate's rules.":
@@ -50,7 +50,7 @@ const TRANSLATIONS = {
 				'Unrated нива могат да бъдат поставени, но се разглеждат по-субективно и може да изискват гласуване.',
 			'Low-quality levels may be rejected even if they otherwise qualify.':
 				'Нива с много ниско качество може да бъдат отказани, дори ако иначе отговарят на условията.',
-			'Difficulty Changes': 'Промени в трудността',
+			'Difficulty Changes': 'Промени в позицията',
 			'Victor opinions have priority when they are reliable and based on nearby completions.':
 				'Мненията на victor-и имат приоритет, когато са надеждни и базирани на близки completion-и.',
 			'If victors disagree, the list placement and the number of trusted opinions are used to decide the change.':
