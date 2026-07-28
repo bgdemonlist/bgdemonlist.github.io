@@ -71,10 +71,12 @@ function renderNavLinks(isSignedIn) {
       <li><a href="admin.html">Admin</a></li>
       <li><a href="roulette.html">Roulette</a></li>
       <li><a href="leaderboard.html">Leaderboard</a></li>
+      <li><a href="guidelines.html">Guidelines</a></li>
     `
 		: `
       <li><a href="roulette.html">Roulette</a></li>
       <li><a href="leaderboard.html">Leaderboard</a></li>
+      <li><a href="guidelines.html">Guidelines</a></li>
     `;
 }
 
