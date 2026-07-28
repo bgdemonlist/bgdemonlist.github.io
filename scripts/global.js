@@ -108,6 +108,28 @@ const TRANSLATIONS = {
 			'No province': 'Няма област',
 			Submit: 'Изпрати',
 			All: 'Всички',
+			'Level Packs': 'Пакети с нива',
+			'Level Packs:': 'Пакети с нива:',
+			'View All Packs': 'Виж всички пакети',
+			'View all level packs': 'Виж всички пакети',
+			'Completed Packs': 'Завършени пакети',
+			'No completed packs yet': 'Все още няма завършени пакети',
+			'No level packs available yet.': 'Все още няма налични пакети с нива.',
+			'No level packs created yet.': 'Все още няма създадени пакети с нива.',
+			'Manage Level Packs': 'Управление на пакети с нива',
+			'Create Level Pack': 'Създай пакет с нива',
+			'Edit Level Pack': 'Редактирай пакет с нива',
+			'Pack Name': 'Име на пакета',
+			'Pack Color': 'Цвят на пакета',
+			'Select Levels': 'Избери нива',
+			'Levels Included': 'Включени нива',
+			'Sign Out': 'Изход',
+			'Admin Panel': 'Админ панел',
+			'Admin Login': 'Админ вход',
+			'Email': 'Имейл',
+			'Password': 'Парола',
+			'Login': 'Вход',
+			'Edit': 'Редактирай',
 		},
 		placeholder: {
 			'Search...': 'Търсене...',
@@ -382,7 +404,7 @@ function translatePage() {
 			? TRANSLATIONS.bg.text[originalDocumentTitle] || originalDocumentTitle
 			: originalDocumentTitle;
 	const textSelector =
-		'a, h1, h2, h3, p, li, label, button, option, #start-btn, #submit-btn';
+		'a, h1, h2, h3, p, li, label, button, option, span, #start-btn, #submit-btn';
 	document.querySelectorAll(textSelector).forEach(translateTextElement);
 	document
 		.querySelectorAll('input[placeholder], textarea[placeholder]')

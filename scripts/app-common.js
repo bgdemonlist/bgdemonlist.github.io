@@ -71,15 +71,19 @@ function renderNavLinks() {
 		return;
 	}
 
+	const user = auth.currentUser;
+	const adminLink = user ? '<li><a href="admin.html">Admin</a></li>' : '';
+
 	nav.innerHTML = `
       <li><a href="roulette.html">Roulette</a></li>
       <li><a href="leaderboard.html">Leaderboard</a></li>
       <li><a href="guidelines.html">Guidelines</a></li>
+      ${adminLink}
     `;
 }
 
 export function initAuthNavigation() {
-	onAuthStateChanged(auth, (user) => {
+	onAuthStateChanged(auth, () => {
 		renderNavLinks();
 	});
 }

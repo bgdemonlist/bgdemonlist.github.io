@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Admin Panel - BG Demon List</title>
+		<link rel="stylesheet" href="css/admin.css" />
+		<link rel="stylesheet" href="css/global.css" />
+		<script src="scripts/admin.js" type="module"></script>
+		<script src="scripts/global.js" type="module"></script>
+		<script src="https://kit.fontawesome.com/811caf8c84.js" crossorigin="anonymous"></script>
+	</head>
+	<body>
+		<header>
+			<h3 id="logo"><a href="/">BGDL</a></h3>
+			<nav>
+				<ul id="nav_links">
+					<li><a href="roulette.html">Roulette</a></li>
+					<li><a href="leaderboard.html">Leaderboard</a></li>
+					<li><a href="guidelines.html">Guidelines</a></li>
+				</ul>
+			</nav>
+		</header>
+
+		<main id="admin-main">
+			<!-- Auth Section: Login Form when logged out -->
+			<section id="admin-login-section" class="hide">
+				<div class="admin-card login-card">
+					<div class="card-header">
+						<i class="fa-solid fa-lock" aria-hidden="true"></i>
+						<h2>Admin Login</h2>
+					</div>
+					<form id="login-form">
+						<div class="form-group">
+							<label for="login-email">Email</label>
+							<input id="login-email" type="email" placeholder="Email..." required />
+						</div>
+						<div class="form-group">
+							<label for="login-password">Password</label>
+							<input id="login-password" type="password" placeholder="Password..." required />
+						</div>
+						<div id="login-error" class="error-msg hide"></div>
+						<button id="login-btn" type="submit">Login</button>
+					</form>
+				</div>
+			</section>
+
+			<!-- Admin Dashboard Section: Level Packs Manager when logged in -->
+			<section id="admin-dashboard-section" class="hide">
+				<div class="dashboard-header">
+					<div>
+						<h1>Admin Panel</h1>
+						<p class="subtitle">Manage Level Packs</p>
+					</div>
+					<button id="sign-out-btn" type="button" class="btn-secondary">
+						<i class="fa-solid fa-right-from-bracket"></i> Sign Out
+					</button>
+				</div>
+
+				<div class="dashboard-grid">
+					<!-- Pack Form Card -->
+					<div class="admin-card">
+						<div class="card-header">
+							<i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+							<h2 id="pack-form-title">Create Level Pack</h2>
+						</div>
+						<form id="pack-form">
+							<input id="pack-id" type="hidden" />
+
+							<div class="form-group">
+								<label for="pack-name">Pack Name</label>
+								<input id="pack-name" type="text" placeholder="e.g. Top 10 Pack..." required />
+							</div>
+
+							<div class="form-group">
+								<label for="pack-color">Pack Color</label>
+								<div class="color-picker-row">
+									<input id="pack-color" type="color" value="#e2495c" />
+									<input id="pack-color-hex" type="text" value="#E2495C" placeholder="#E2495C" maxlength="7" />
+									<div id="color-preview-chip" class="color-preview-chip" style="background-color: #e2495c;">Sample</div>
+								</div>
+							</div>
+
+							<div class="form-group">
+								<div class="level-select-header">
+									<label>Select Levels</label>
+									<span id="selected-levels-count" class="badge-count">0 levels selected</span>
+								</div>
+								<div class="search-box">
+									<i class="fa-solid fa-magnifying-glass"></i>
+									<input id="level-search-input" type="text" placeholder="Search level..." />
+								</div>
+								<div id="level-checkboxes-container" class="checkboxes-scroll-container">
+									<div class="loading-text">Loading levels...</div>
+								</div>
+							</div>
+
+							<div class="form-actions">
+								<button id="pack-cancel-btn" type="button" class="btn-secondary hide">Cancel</button>
+								<button id="pack-submit-btn" type="submit" class="btn-primary">Create Pack</button>
+							</div>
+						</form>
+					</div>
+
+					<!-- Packs List Card -->
+					<div class="admin-card">
+						<div class="card-header">
+							<i class="fa-solid fa-boxes-stacked" aria-hidden="true"></i>
+							<h2>Existing Level Packs</h2>
+						</div>
+						<div id="packs-list-container" class="packs-list">
+							<div class="loading-text">Loading packs...</div>
+						</div>
+					</div>
+				</div>
+			</section>
+		</main>
+	</body>
+</html>

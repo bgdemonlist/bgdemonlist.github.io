@@ -5,11 +5,6 @@ import {
 	get,
 	update,
 } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
-import {
-	ref as sRef,
-	getDownloadURL,
-	uploadBytes,
-} from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
 import {
 	auth,
@@ -18,7 +13,6 @@ import {
 	initAuthNavigation,
 	normalizeKey,
 	setText,
-	storage,
 } from './app-common.js';
 
 const PROVINCE_MAP = {
@@ -52,16 +46,7 @@ const PROVINCE_MAP = {
 	Y: 'Yambol',
 };
 
-const ALLOWED_ICON_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp'];
-const ICON_MIME_BY_EXTENSION = {
-	jpg: 'image/jpeg',
-	jpeg: 'image/jpeg',
-	png: 'image/png',
-	webp: 'image/webp',
-};
-
 const leaderboard = byId('players-list');
-const playerIcon = byId('player-icon');
 const playerSearch = byId('player-search');
 const playerName = byId('player-name');
 const hardestText = byId('hardest-text');
@@ -75,22 +60,23 @@ const provinceFilter = byId('province-filter');
 const editPlayerOverlay = byId('edit-player-overlay');
 const editPlayerForm = byId('edit-player-form');
 const editPlayerNameInput = byId('edit-player-name');
-const editPlayerImageInput = byId('edit-player-image');
 const editPlayerProvinceSelect = byId('edit-player-province');
 const editPlayerCloseBtn = byId('edit-player-close');
 const editPlayerCancelBtn = byId('edit-player-cancel');
 const editPlayerSaveBtn = byId('edit-player-save');
 
+const completedPacksList = byId('completed-packs-list');
+const packsOverlay = byId('packs-overlay');
+const packsModalClose = byId('packs-modal-close');
+const packsModalList = byId('packs-modal-list');
+
 const playerList = [];
+const allPacksList = [];
 const levelPositionByName = new Map();
 
 let selectedPlayerIndex = -1;
 let isSignedIn = false;
 let isSavingPlayerEdit = false;
-const playerIconDataCache = new Map();
-const playerIconRequestCache = new Map();
-let defaultPlayerIconUrlPromise = null;
-let latestPlayerIconRenderRequest = 0;
 
 initAuthNavigation();
 
@@ -230,152 +216,7 @@ function populateEditProvinceOptions(selectedCode = '') {
 	}
 }
 
-async function setPlayerIcon(player) {
-	if (!playerIcon) {
-		return;
-	}
 
-	const requestId = ++latestPlayerIconRenderRequest;
-	const iconData = await getPlayerIconData(
-		getPlayerIconBaseName(player),
-		player.iconExtension,
-	);
-	if (requestId !== latestPlayerIconRenderRequest) {
-		return;
-	}
-
-	if (iconData?.url) {
-		player.iconExtension = iconData.extension;
-		playerIcon.src = iconData.url;
-		return;
-	}
-
-	const defaultIconUrl = await getDefaultPlayerIconUrl();
-	if (requestId === latestPlayerIconRenderRequest) {
-		playerIcon.src = defaultIconUrl || '';
-	}
-}
-
-function getPlayerIconBaseName(player) {
-	return String(player?.iconBaseName || player?.name || '').trim();
-}
-
-function normalizeIconExtension(value) {
-	const extension = String(value || '').trim().toLowerCase().replace('.', '');
-	return ALLOWED_ICON_EXTENSIONS.includes(extension) ? extension : '';
-}
-
-function getAllowedIconExtensions(preferredExtension = '') {
-	const normalizedPreferred = normalizeIconExtension(preferredExtension);
-	if (!normalizedPreferred) {
-		return [...ALLOWED_ICON_EXTENSIONS];
-	}
-
-	return [
-		normalizedPreferred,
-		...ALLOWED_ICON_EXTENSIONS.filter((ext) => ext !== normalizedPreferred),
-	];
-}
-
-async function getPlayerIconData(playerName, preferredExtension = '') {
-	const safeName = String(playerName || '').trim();
-	if (!safeName) {
-		return null;
-	}
-
-	if (playerIconDataCache.has(safeName)) {
-		return playerIconDataCache.get(safeName);
-	}
-
-	if (playerIconRequestCache.has(safeName)) {
-		return playerIconRequestCache.get(safeName);
-	}
-
-	const requestPromise = (async () => {
-		const candidates = getAllowedIconExtensions(preferredExtension);
-		for (const extension of candidates) {
-			try {
-				const iconRef = sRef(storage, `player-icons/${safeName}.${extension}`);
-				const url = await getDownloadURL(iconRef);
-				return {
-					url,
-					extension,
-				};
-			} catch {
-				// Try next extension.
-			}
-		}
-
-		return null;
-	})()
-		.then((iconData) => {
-			playerIconDataCache.set(safeName, iconData);
-			return iconData;
-		})
-		.finally(() => {
-			playerIconRequestCache.delete(safeName);
-		});
-
-	playerIconRequestCache.set(safeName, requestPromise);
-	return requestPromise;
-}
-
-async function getDefaultPlayerIconUrl() {
-	if (!defaultPlayerIconUrlPromise) {
-		defaultPlayerIconUrlPromise = getDownloadURL(
-			sRef(storage, 'player-icons/default-user-icon.png'),
-		).catch(() => '');
-	}
-
-	return defaultPlayerIconUrlPromise;
-}
-
-function clearPlayerIconCacheForNames(names = []) {
-	names.forEach((name) => {
-		const safeName = String(name || '').trim();
-		if (!safeName) {
-			return;
-		}
-
-		playerIconDataCache.delete(safeName);
-		playerIconRequestCache.delete(safeName);
-	});
-}
-
-function prefetchPlayerIcons(limit = 20) {
-	const playersToPrefetch = playerList
-		.filter((player) => getPlayerIconBaseName(player))
-		.slice(0, limit);
-
-	if (!playersToPrefetch.length) {
-		return;
-	}
-
-	const maxConcurrency = Math.min(4, playersToPrefetch.length);
-	let cursor = 0;
-
-	for (let worker = 0; worker < maxConcurrency; worker += 1) {
-		(async () => {
-			while (cursor < playersToPrefetch.length) {
-				const currentIndex = cursor;
-				cursor += 1;
-				const player = playersToPrefetch[currentIndex];
-
-				try {
-					const iconData = await getPlayerIconData(
-						getPlayerIconBaseName(player),
-						player.iconExtension,
-					);
-					if (iconData?.extension && !player.iconExtension) {
-						player.iconExtension = iconData.extension;
-					}
-				} catch {
-					// No-op: prefetch should never block UI rendering.
-				}
-			}
-		})();
-	}
-}
 
 function renderCompletions(records) {
 	completionsList.innerHTML = '';
@@ -414,8 +255,74 @@ function updatePlayerNameEditability() {
 	const canEdit = isSignedIn && selectedPlayerIndex >= 0;
 	playerName.classList.toggle('editable-player-name', canEdit);
 	playerName.title = canEdit
-		? 'Click to edit username and profile picture'
+		? 'Click to edit player details'
 		: '';
+}
+
+function isPackCompletedByPlayer(pack, player) {
+	if (!pack || !Array.isArray(pack.levels) || !pack.levels.length || !player) {
+		return false;
+	}
+	const completedSet = new Set(
+		Object.values(player.records ?? {}).map((r) => normalizeKey(r.name)),
+	);
+	return pack.levels.every((lvl) => completedSet.has(normalizeKey(lvl)));
+}
+
+function renderCompletedPacks(player) {
+	if (!completedPacksList) return;
+	completedPacksList.innerHTML = '';
+
+	if (!player) {
+		return;
+	}
+
+	const completedPacks = allPacksList.filter((pack) =>
+		isPackCompletedByPlayer(pack, player),
+	);
+
+	if (!completedPacks.length) {
+		const msg = document.createElement('div');
+		msg.className = 'no-packs-msg';
+
+		const textSpan = document.createElement('span');
+		setText(textSpan, 'No completed packs yet');
+
+		const link = document.createElement('a');
+		link.href = '#';
+		link.className = 'view-all-packs-link';
+		setText(link, 'View all level packs');
+		link.addEventListener('click', (e) => {
+			e.preventDefault();
+			openPacksModal();
+		});
+
+		msg.append(
+			textSpan,
+			document.createTextNode(' ('),
+			link,
+			document.createTextNode(')'),
+		);
+		completedPacksList.append(msg);
+		return;
+	}
+
+	completedPacks.forEach((pack) => {
+		const badge = document.createElement('button');
+		badge.type = 'button';
+		badge.className = 'profile-pack-badge';
+		badge.style.borderColor = pack.color || '#e2495c';
+
+		const nameSpan = document.createElement('span');
+		setText(nameSpan, pack.name);
+
+		badge.append(nameSpan);
+		badge.addEventListener('click', () => {
+			openPacksModal(pack.key || pack.id);
+		});
+
+		completedPacksList.append(badge);
+	});
 }
 
 async function renderSelectedPlayer(index) {
@@ -430,11 +337,9 @@ async function renderSelectedPlayer(index) {
 		setText(rankText, '-');
 		setText(completionsText, '0 (0 FVs)');
 		completionsList.innerHTML = '';
+		if (completedPacksList) completedPacksList.innerHTML = '';
 		if (playerProvince) {
 			playerProvince.src = '';
-		}
-		if (playerIcon) {
-			playerIcon.src = '';
 		}
 		updatePlayerNameEditability();
 		return;
@@ -452,6 +357,7 @@ async function renderSelectedPlayer(index) {
 	setText(rankText, `#${index + 1}`);
 	setText(completionsText, `${records.length} (${firstVictories} FVs)`);
 	renderCompletions(records);
+	renderCompletedPacks(player);
 
 	if (playerProvince) {
 		playerProvince.src = player.province
@@ -460,7 +366,6 @@ async function renderSelectedPlayer(index) {
 	}
 
 	updatePlayerNameEditability();
-	await setPlayerIcon(player);
 }
 
 function createPlayerListItem(player, displayRank) {
@@ -499,11 +404,13 @@ function createPlayerListItem(player, displayRank) {
 
 async function loadData() {
 	playerList.length = 0;
+	allPacksList.length = 0;
 	levelPositionByName.clear();
 
-	const [usersSnapshot, levelsSnapshot] = await Promise.all([
+	const [usersSnapshot, levelsSnapshot, packsSnapshot] = await Promise.all([
 		get(ref(db, 'users')),
 		get(query(ref(db, 'levels'), orderByChild('pos'))),
+		get(ref(db, 'packs')),
 	]);
 
 	levelsSnapshot.forEach((levelSnapshot) => {
@@ -514,6 +421,22 @@ async function loadData() {
 
 		levelPositionByName.set(level.name, level.pos);
 	});
+
+	packsSnapshot.forEach((packSnapshot) => {
+		const pack = packSnapshot.val();
+		if (pack && pack.name && Array.isArray(pack.levels)) {
+			allPacksList.push({
+				key: packSnapshot.key,
+				...pack,
+			});
+		}
+	});
+
+	allPacksList.sort(
+		(a, b) =>
+			(typeof a.pos === 'number' ? a.pos : 9999) -
+			(typeof b.pos === 'number' ? b.pos : 9999),
+	);
 
 	usersSnapshot.forEach((userSnapshot) => {
 		const player = userSnapshot.val();
@@ -559,7 +482,6 @@ function renderLeaderboard() {
 
 	buildProvinceDropdown();
 	applyFilters();
-	prefetchPlayerIcons();
 }
 
 function closeEditPlayerPopup() {
@@ -578,9 +500,6 @@ function openEditPlayerPopup() {
 	}
 
 	editPlayerNameInput.value = selectedPlayer.name;
-	if (editPlayerImageInput) {
-		editPlayerImageInput.value = '';
-	}
 	populateEditProvinceOptions(selectedPlayer.province);
 
 	editPlayerOverlay.classList.remove('hide');
@@ -590,44 +509,6 @@ function openEditPlayerPopup() {
 
 function isInvalidDatabaseKey(value) {
 	return /[.#$/\[\]]/.test(value);
-}
-
-function getImageFileExtension(file) {
-	if (!file) {
-		return '';
-	}
-
-	const mimeType = String(file.type || '').toLowerCase();
-	if (mimeType === 'image/jpeg' || mimeType === 'image/jpg') {
-		return 'jpg';
-	}
-	if (mimeType === 'image/png') {
-		return 'png';
-	}
-	if (mimeType === 'image/webp') {
-		return 'webp';
-	}
-
-	const name = String(file.name || '').toLowerCase();
-	if (name.endsWith('.jpg') || name.endsWith('.jpeg')) {
-		return 'jpg';
-	}
-	if (name.endsWith('.png')) {
-		return 'png';
-	}
-	if (name.endsWith('.webp')) {
-		return 'webp';
-	}
-
-	return '';
-}
-
-function isSupportedImageFile(file) {
-	if (!file) {
-		return true;
-	}
-
-	return Boolean(getImageFileExtension(file));
 }
 
 async function refreshLeaderboard(preferredPlayerName = '') {
@@ -668,8 +549,6 @@ async function handleEditPlayerSubmit(event) {
 	}
 
 	const newName = editPlayerNameInput?.value.trim() ?? '';
-	const selectedImageFile = editPlayerImageInput?.files?.[0] ?? null;
-	const selectedImageExtension = getImageFileExtension(selectedImageFile);
 	const selectedProvince = normalizeProvince(editPlayerProvinceSelect?.value);
 	const oldName = selectedPlayer.name;
 	const oldUserKey = selectedPlayer.userKey || oldName;
@@ -681,11 +560,6 @@ async function handleEditPlayerSubmit(event) {
 
 	if (isInvalidDatabaseKey(newName)) {
 		alert('Username contains invalid characters for Firebase keys.');
-		return;
-	}
-
-	if (!isSupportedImageFile(selectedImageFile)) {
-		alert('Only JPG, PNG, and WEBP images are allowed.');
 		return;
 	}
 
@@ -715,12 +589,6 @@ async function handleEditPlayerSubmit(event) {
 
 		const oldUserData = oldUserSnapshot.val() ?? {};
 		const oldProvince = normalizeProvince(oldUserData.province);
-		const oldIconExtension = normalizeIconExtension(oldUserData.iconExtension);
-		const oldIconBaseName = String(
-			oldUserData.iconBaseName || oldUserKey || oldName,
-		).trim();
-		let finalIconExtension = oldIconExtension;
-		let finalIconBaseName = oldIconBaseName;
 		const updates = {};
 		const oldNameKeys = new Set([
 			normalizeKey(oldName),
@@ -729,21 +597,6 @@ async function handleEditPlayerSubmit(event) {
 		]);
 		const newRecordKey = normalizeKey(newName);
 		const conflictingLevels = [];
-
-		if (selectedImageFile && selectedImageExtension) {
-			finalIconExtension = selectedImageExtension;
-			finalIconBaseName = newName;
-			await uploadBytes(
-				sRef(storage, `player-icons/${newName}.${selectedImageExtension}`),
-				selectedImageFile,
-				{
-					contentType:
-						selectedImageFile.type ||
-						ICON_MIME_BY_EXTENSION[selectedImageExtension] ||
-						'application/octet-stream',
-				},
-			);
-		}
 
 		if (newName !== oldUserKey) {
 			const newUserData = {
@@ -754,12 +607,6 @@ async function handleEditPlayerSubmit(event) {
 				newUserData.province = selectedProvince;
 			} else {
 				delete newUserData.province;
-			}
-			newUserData.iconBaseName = finalIconBaseName || newName;
-			if (finalIconExtension) {
-				newUserData.iconExtension = finalIconExtension;
-			} else {
-				delete newUserData.iconExtension;
 			}
 
 			updates[`users/${newName}`] = {
@@ -772,20 +619,6 @@ async function handleEditPlayerSubmit(event) {
 
 		if (newName === oldUserKey && selectedProvince !== oldProvince) {
 			updates[`users/${oldUserKey}/province`] = selectedProvince || null;
-		}
-
-		if (newName === oldUserKey && finalIconExtension !== oldIconExtension) {
-			updates[`users/${oldUserKey}/iconExtension`] =
-				finalIconExtension || null;
-		}
-		if (newName === oldUserKey) {
-			const previousBaseName = String(
-				oldUserData.iconBaseName || oldUserKey,
-			).trim();
-			if (finalIconBaseName !== previousBaseName) {
-				updates[`users/${oldUserKey}/iconBaseName`] =
-					finalIconBaseName || null;
-			}
 		}
 
 		levelsSnapshot.forEach((levelSnapshot) => {
@@ -844,13 +677,6 @@ async function handleEditPlayerSubmit(event) {
 			await update(ref(db), updates);
 		}
 
-		clearPlayerIconCacheForNames([
-			oldName,
-			oldUserKey,
-			oldIconBaseName,
-			newName,
-			finalIconBaseName,
-		]);
 		closeEditPlayerPopup();
 		await refreshLeaderboard(newName);
 	} catch (error) {
@@ -862,6 +688,124 @@ async function handleEditPlayerSubmit(event) {
 			editPlayerSaveBtn.disabled = false;
 		}
 	}
+}
+
+function openPacksModal(highlightPackKey = null) {
+	if (!packsOverlay) return;
+	renderPacksModalContent(highlightPackKey);
+	packsOverlay.classList.remove('hide');
+}
+
+function closePacksModal() {
+	if (!packsOverlay) return;
+	packsOverlay.classList.add('hide');
+}
+
+function renderPacksModalContent(highlightPackKey = null) {
+	if (!packsModalList) return;
+	packsModalList.innerHTML = '';
+
+	if (!allPacksList.length) {
+		packsModalList.innerHTML =
+			'<div class="no-packs-msg">No level packs available yet.</div>';
+		return;
+	}
+
+	const selectedPlayer = playerList[selectedPlayerIndex];
+	const playerCompletedSet = selectedPlayer
+		? new Set(
+				Object.values(selectedPlayer.records ?? {}).map((r) =>
+					normalizeKey(r.name),
+				),
+			)
+		: new Set();
+
+	allPacksList.forEach((pack) => {
+		const card = document.createElement('div');
+		card.className = 'modal-pack-card';
+		card.style.borderColor = pack.color || '#e2495c';
+
+		const packKey = pack.key || pack.id;
+		if (highlightPackKey && packKey === highlightPackKey) {
+			card.classList.add('highlighted-pack');
+		}
+
+		const levels = Array.isArray(pack.levels) ? pack.levels : [];
+		const completedCount = levels.filter((lvl) =>
+			playerCompletedSet.has(normalizeKey(lvl)),
+		).length;
+		const isFullyCompleted =
+			levels.length > 0 && completedCount === levels.length;
+
+		if (isFullyCompleted) {
+			card.classList.add('completed-pack');
+		}
+
+		const header = document.createElement('div');
+		header.className = 'modal-pack-header';
+
+		const titleDiv = document.createElement('div');
+		titleDiv.className = 'modal-pack-title';
+
+		const titleText = document.createElement('h3');
+		setText(titleText, pack.name);
+
+		titleDiv.append(titleText);
+
+		const statusBadge = document.createElement('span');
+		statusBadge.className = isFullyCompleted
+			? 'pack-status-badge completed'
+			: 'pack-status-badge';
+
+		if (selectedPlayer) {
+			setText(
+				statusBadge,
+				isFullyCompleted
+					? 'COMPLETED'
+					: `${completedCount} / ${levels.length}`,
+			);
+		} else {
+			setText(statusBadge, `${levels.length} levels`);
+		}
+
+		header.append(titleDiv, statusBadge);
+
+		const levelsGrid = document.createElement('div');
+		levelsGrid.className = 'modal-pack-levels-grid';
+
+		levels.forEach((lvlName) => {
+			const isCompleted = playerCompletedSet.has(normalizeKey(lvlName));
+			const levelItem = document.createElement('div');
+			levelItem.className = isCompleted
+				? 'modal-level-item completed'
+				: 'modal-level-item';
+
+			const icon = document.createElement('i');
+			icon.className = isCompleted
+				? 'fa-solid fa-circle-check check-icon'
+				: 'fa-regular fa-circle uncheck-icon';
+
+			const pos = levelPositionByName.get(lvlName);
+			const levelNameElem = document.createElement('a');
+			levelNameElem.className = 'modal-level-name';
+			setText(levelNameElem, pos ? `#${pos} - ${lvlName}` : lvlName);
+			if (pos) {
+				levelNameElem.href = `level.html?pos=${pos}`;
+			}
+
+			levelItem.append(icon, levelNameElem);
+			levelsGrid.append(levelItem);
+		});
+
+		card.append(header, levelsGrid);
+		packsModalList.append(card);
+
+		if (highlightPackKey && packKey === highlightPackKey) {
+			setTimeout(() => {
+				card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+			}, 120);
+		}
+	});
 }
 
 playerName?.addEventListener('click', () => {
@@ -882,9 +826,20 @@ editPlayerOverlay?.addEventListener('click', (event) => {
 	}
 });
 
+packsModalClose?.addEventListener('click', () => {
+	closePacksModal();
+});
+
+packsOverlay?.addEventListener('click', (event) => {
+	if (event.target === packsOverlay) {
+		closePacksModal();
+	}
+});
+
 document.addEventListener('keydown', (event) => {
 	if (event.key === 'Escape') {
 		closeEditPlayerPopup();
+		closePacksModal();
 	}
 });
 
