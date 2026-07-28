@@ -1,5 +1,10 @@
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js';
-import { getAuth, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
+import {
+	getAuth,
+	onAuthStateChanged,
+	signInWithEmailAndPassword,
+	signOut,
+} from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
 import { getDatabase } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
 import { getStorage } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js';
 
@@ -60,20 +65,13 @@ export function setText(element, value, fallback = '') {
 	}
 }
 
-function renderNavLinks(isSignedIn) {
+function renderNavLinks() {
 	const nav = byId('nav_links');
 	if (!nav) {
 		return;
 	}
 
-	nav.innerHTML = isSignedIn
-		? `
-      <li><a href="admin.html">Admin</a></li>
-      <li><a href="roulette.html">Roulette</a></li>
-      <li><a href="leaderboard.html">Leaderboard</a></li>
-      <li><a href="guidelines.html">Guidelines</a></li>
-    `
-		: `
+	nav.innerHTML = `
       <li><a href="roulette.html">Roulette</a></li>
       <li><a href="leaderboard.html">Leaderboard</a></li>
       <li><a href="guidelines.html">Guidelines</a></li>
@@ -82,6 +80,6 @@ function renderNavLinks(isSignedIn) {
 
 export function initAuthNavigation() {
 	onAuthStateChanged(auth, (user) => {
-		renderNavLinks(Boolean(user));
+		renderNavLinks();
 	});
 }

@@ -6,14 +6,41 @@
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>BG Demon List</title>
 	<link rel="stylesheet" href="css/levels.css">
-    <link rel="stylesheet" href="css/global.css">
-    <script src="scripts/global.js" type="module"></script>
-    <script src="scripts/levels.js" type="module"></script>
-    <script src="https://kit.fontawesome.com/811caf8c84.js" crossorigin="anonymous"></script>
-    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5725075189667292"
+	<link rel="stylesheet" href="css/global.css">
+	<script src="scripts/global.js" type="module"></script>
+	<script src="scripts/levels.js" type="module"></script>
+	<script src="https://kit.fontawesome.com/811caf8c84.js" crossorigin="anonymous"></script>
+	<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-5725075189667292"
      crossorigin="anonymous"></script>
 </head>
 <body>
+	<div id="black-screen">
+		<div id="add-popup">
+			<div id="add-popup-top">
+				<h1>Add Record</h1>
+				<i class="fa-solid fa-x" id="add-popup-close"></i>
+			</div>
+			<form id="add-popup-bottom">
+				<input id="add-popup-name" placeholder="Holder Name...">
+				<input id="add-popup-video" placeholder="Video Link...">
+				<button>Submit</button>
+			</form>
+		</div>
+
+		<div id="edit-popup">
+			<div id="edit-popup-top">
+				<h1>Edit Level</h1>
+				<i class="fa-solid fa-x" id="edit-popup-close"></i>
+			</div>
+			<form id="edit-popup-bottom">
+				<input id="edit-popup-name" placeholder="Level Name...">
+				<input id="edit-popup-creator" placeholder="Creator Name...">
+				<input id="edit-popup-video" placeholder="Video Link...">
+				<button>Save</button>
+			</form>
+		</div>
+	</div>
+
 	<header>
 		<h3 id="logo"><a href="/">BGDL</a></h3>
 		<nav>
@@ -24,19 +51,25 @@
 			</ul>
 		</nav>
 	</header>
-    <section id="level-section">
-        <div class="container">
-            <h2 class="titles" id="levelName"></h2>
-            <p class="sub-title" id="levelCreator"></p>
-            <iframe id="level-video"></iframe>
-            <h3 id="score-text">Points on completion:</h3>
-            <p id="score"></p>
-        </div>
-        <div class="container">
-            <h2 class="titles">Victors</h2>
-            <p class="sub-title" id="victor-count"></p>
-            <ul id="victors-container"></ul>
-        </div>
-    </section>
+	<section id="level-section">
+		<div class="container">
+			<div id="level-header">
+				<h2 class="titles" id="levelName"></h2>
+				<i class="fa-solid fa-pen admin-only" id="edit-level-btn" style="display: none;"></i>
+			</div>
+			<p class="sub-title" id="levelCreator"></p>
+			<iframe id="level-video"></iframe>
+			<h3 id="score-text">Points on completion:</h3>
+			<p id="score"></p>
+		</div>
+		<div class="container">
+			<h2 class="titles">Victors</h2>
+			<div id="add-remove-div" class="admin-only" style="display: none;">
+				<i class="fa-solid fa-plus" id="plus"></i>
+			</div>
+			<p class="sub-title" id="victor-count"></p>
+			<ul id="victors-container"></ul>
+		</div>
+	</section>
 </body>
 </html>
