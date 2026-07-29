@@ -38,6 +38,18 @@ export function calculatePackLevelPointsSum(packLevels, levelPositionByName, cal
 	}, 0);
 }
 
+export function calculatePackBonusPoints(pack, baseLevelPointsSum = 0) {
+	if (!pack) return 0;
+	const percentVal = typeof pack.bonusPercent === 'number' && !isNaN(pack.bonusPercent)
+		? pack.bonusPercent
+		: (PACK_BONUS_MULTIPLIER * 100);
+	const percentBonus = baseLevelPointsSum * (percentVal / 100);
+	const flatBonus = typeof pack.bonusFlat === 'number' && !isNaN(pack.bonusFlat)
+		? pack.bonusFlat
+		: 0;
+	return Math.max(0, percentBonus + flatBonus);
+}
+
 export function byId(id) {
 	return document.getElementById(id);
 }

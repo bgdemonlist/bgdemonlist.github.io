@@ -93,9 +93,23 @@
 	color: var(--text-muted);
 }
 
+.form-row-2 {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 16px;
+}
+
+@media (max-width: 600px) {
+	.form-row-2 {
+		grid-template-columns: 1fr;
+		gap: 0;
+	}
+}
+
 .form-group input[type='text'],
 .form-group input[type='email'],
 .form-group input[type='password'],
+.form-group input[type='number'],
 .form-group select {
 	width: 100%;
 	padding: 10px 14px;

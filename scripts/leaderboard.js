@@ -15,6 +15,7 @@ import {
 	setText,
 	PACK_BONUS_MULTIPLIER,
 	calculatePackLevelPointsSum,
+	calculatePackBonusPoints,
 } from './app-common.js';
 
 const PROVINCE_MAP = {
@@ -449,11 +450,21 @@ async function loadData() {
 		}
 	});
 
-	allPacksList.sort(
-		(a, b) =>
-			(typeof a.pos === 'number' ? a.pos : 9999) -
-			(typeof b.pos === 'number' ? b.pos : 9999),
-	);
+	allPacksList.sort((a, b) => {
+		const tierA = a.tierId ? tiersMap.get(a.tierId) : null;
+		const tierB = b.tierId ? tiersMap.get(b.tierId) : null;
+
+		const tierPosA = tierA && typeof tierA.pos === 'number' ? tierA.pos : Infinity;
+		const tierPosB = tierB && typeof tierB.pos === 'number' ? tierB.pos : Infinity;
+
+		if (tierPosA !== tierPosB) {
+			return tierPosA - tierPosB;
+		}
+
+		const packPosA = typeof a.pos === 'number' ? a.pos : 9999;
+		const packPosB = typeof b.pos === 'number' ? b.pos : 9999;
+		return packPosA - packPosB;
+	});
 
 	// Compute completion bonus points per pack
 	allPacksList.forEach((pack) => {
@@ -463,7 +474,7 @@ async function loadData() {
 			calculatePoints,
 		);
 		pack.baseLevelPointsSum = baseSum;
-		pack.bonusPoints = baseSum * PACK_BONUS_MULTIPLIER;
+		pack.bonusPoints = calculatePackBonusPoints(pack, baseSum);
 	});
 
 	usersSnapshot.forEach((userSnapshot) => {

@@ -33,6 +33,8 @@ const packTierSelect = byId('pack-tier');
 const packColorInput = byId('pack-color');
 const packColorHexInput = byId('pack-color-hex');
 const colorPreviewChip = byId('color-preview-chip');
+const packBonusPercentInput = byId('pack-bonus-percent');
+const packBonusFlatInput = byId('pack-bonus-flat');
 const levelSearchInput = byId('level-search-input');
 const levelCheckboxesContainer = byId('level-checkboxes-container');
 const selectedLevelsCount = byId('selected-levels-count');
@@ -289,6 +291,16 @@ async function handlePackFormSubmit(e) {
 	const selectedLevels = getSelectedLevelNames();
 	const existingId = packIdInput?.value.trim();
 
+	const bonusPercentRaw = packBonusPercentInput?.value.trim();
+	const bonusFlatRaw = packBonusFlatInput?.value.trim();
+
+	const bonusPercent = bonusPercentRaw !== '' && bonusPercentRaw !== undefined && !isNaN(parseFloat(bonusPercentRaw))
+		? parseFloat(bonusPercentRaw)
+		: null;
+	const bonusFlat = bonusFlatRaw !== '' && bonusFlatRaw !== undefined && !isNaN(parseFloat(bonusFlatRaw))
+		? parseFloat(bonusFlatRaw)
+		: null;
+
 	if (!name) {
 		alert('Please enter a pack name.');
 		return;
@@ -313,6 +325,8 @@ async function handlePackFormSubmit(e) {
 			name,
 			tierId: tierId || null,
 			color,
+			bonusPercent: bonusPercent !== null ? bonusPercent : null,
+			bonusFlat: bonusFlat !== null ? bonusFlat : null,
 			levels: selectedLevels,
 			pos,
 			updatedAt: Date.now(),
@@ -340,6 +354,8 @@ function resetPackForm() {
 	if (packColorInput) packColorInput.value = '#e2495c';
 	if (packColorHexInput) packColorHexInput.value = '#E2495C';
 	if (colorPreviewChip) colorPreviewChip.style.backgroundColor = '#e2495c';
+	if (packBonusPercentInput) packBonusPercentInput.value = '';
+	if (packBonusFlatInput) packBonusFlatInput.value = '';
 	if (levelSearchInput) levelSearchInput.value = '';
 
 	setSelectedLevelNames([]);
@@ -601,11 +617,21 @@ async function loadPacks() {
 			}
 		});
 
-		packsList.sort(
-			(a, b) =>
-				(typeof a.pos === 'number' ? a.pos : 9999) -
-				(typeof b.pos === 'number' ? b.pos : 9999),
-		);
+		packsList.sort((a, b) => {
+			const tierA = a.tierId ? tiersList.find((t) => t.key === a.tierId) : null;
+			const tierB = b.tierId ? tiersList.find((t) => t.key === b.tierId) : null;
+
+			const tierPosA = tierA && typeof tierA.pos === 'number' ? tierA.pos : Infinity;
+			const tierPosB = tierB && typeof tierB.pos === 'number' ? tierB.pos : Infinity;
+
+			if (tierPosA !== tierPosB) {
+				return tierPosA - tierPosB;
+			}
+
+			const packPosA = typeof a.pos === 'number' ? a.pos : 9999;
+			const packPosB = typeof b.pos === 'number' ? b.pos : 9999;
+			return packPosA - packPosB;
+		});
 
 		renderPacksList();
 	} catch (err) {
@@ -737,6 +763,9 @@ function editPack(pack) {
 	if (packColorInput) packColorInput.value = color;
 	if (packColorHexInput) packColorHexInput.value = color.toUpperCase();
 	if (colorPreviewChip) colorPreviewChip.style.backgroundColor = color;
+
+	if (packBonusPercentInput) packBonusPercentInput.value = typeof pack.bonusPercent === 'number' ? pack.bonusPercent : '';
+	if (packBonusFlatInput) packBonusFlatInput.value = typeof pack.bonusFlat === 'number' ? pack.bonusFlat : '';
 
 	if (packFormTitle) setText(packFormTitle, 'Edit Level Pack');
 	if (packSubmitBtn) setText(packSubmitBtn, 'Save Pack');
