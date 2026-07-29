@@ -27,6 +27,10 @@
 		<section id="mainContainer">
 			<div id="statsViewer">
 				<h1>Leaderboard</h1>
+				<div class="leaderboard-tabs">
+					<button type="button" id="tab-players" class="leaderboard-tab active">Players</button>
+					<button type="button" id="tab-provinces" class="leaderboard-tab">Provinces</button>
+				</div>
 				<div id="leaderboard">
 					<div id="filters">
 						<input
@@ -40,6 +44,7 @@
 					</div>
 
 					<ul id="players-list"></ul>
+					<ul id="provinces-list" class="hide"></ul>
 				</div>
 			</div>
 			<div id="userStats">
@@ -50,25 +55,25 @@
 
 				<div id="top-stats">
 					<div class="top-container">
-						<h2>Rank:</h2>
+						<h2 id="rank-label">Rank:</h2>
 						<p id="rank-text"></p>
 					</div>
 					<div class="top-container">
-						<h2>Completions:</h2>
+						<h2 id="completions-label">Completions:</h2>
 						<p id="completions-text"></p>
 					</div>
 					<div class="top-container">
-						<h2>Hardest Demon:</h2>
+						<h2 id="hardest-label">Hardest Demon:</h2>
 						<p id="hardest-text"></p>
 					</div>
 					<div class="top-container">
-						<h2>Points:</h2>
+						<h2 id="points-label">Points:</h2>
 						<p id="points-text"></p>
 					</div>
 				</div>
 				<div id="completions-container">
 					<div class="completions-div" id="completions">
-						<h2 class="completions-title">Completions</h2>
+						<h2 class="completions-title" id="completions-title">Completions</h2>
 						<ul id="completions-list"></ul>
 					</div>
 				</div>
@@ -77,6 +82,12 @@
 						<h2 class="packs-title">Level Packs</h2>
 					</div>
 					<div id="completed-packs-list" class="packs-badges-flex"></div>
+				</div>
+				<div id="province-players-container" class="packs-div hide">
+					<div class="packs-header">
+						<h2 class="packs-title">Players in Province</h2>
+					</div>
+					<ul id="province-players-list" class="province-players-flex"></ul>
 				</div>
 			</div>
 		</section>

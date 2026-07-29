@@ -60,6 +60,18 @@ const completionsList = byId('completions-list');
 const playerProvince = byId('player-province');
 const provinceFilter = byId('province-filter');
 
+const tabPlayers = byId('tab-players');
+const tabProvinces = byId('tab-provinces');
+const provincesListElement = byId('provinces-list');
+const rankLabel = byId('rank-label');
+const completionsLabel = byId('completions-label');
+const hardestLabel = byId('hardest-label');
+const pointsLabel = byId('points-label');
+const completionsTitle = byId('completions-title');
+const packsContainer = byId('packs-container');
+const provincePlayersContainer = byId('province-players-container');
+const provincePlayersList = byId('province-players-list');
+
 const editPlayerOverlay = byId('edit-player-overlay');
 const editPlayerForm = byId('edit-player-form');
 const editPlayerNameInput = byId('edit-player-name');
@@ -74,10 +86,13 @@ const packsModalClose = byId('packs-modal-close');
 const packsModalList = byId('packs-modal-list');
 
 const playerList = [];
+const provinceList = [];
 const allPacksList = [];
 const levelPositionByName = new Map();
 
 let selectedPlayerIndex = -1;
+let selectedProvinceIndex = -1;
+let currentLeaderboardMode = 'players';
 let isSignedIn = false;
 let isSavingPlayerEdit = false;
 
@@ -130,19 +145,29 @@ function getSortedRecords(player) {
 
 function applyFilters() {
 	const nameValue = playerSearch?.value.toLowerCase().trim() ?? '';
-	const provinceValue = normalizeProvince(provinceFilter?.value);
 
-	playerList.forEach((player) => {
-		const matchesName = player.name.toLowerCase().includes(nameValue);
-		const playerProvinceValue = normalizeProvince(player.province);
-		const matchesProvince =
-			!provinceValue || playerProvinceValue === provinceValue;
+	if (currentLeaderboardMode === 'players') {
+		const provinceValue = normalizeProvince(provinceFilter?.value);
 
-		player.element?.classList.toggle(
-			'hide',
-			!(matchesName && matchesProvince),
-		);
-	});
+		playerList.forEach((player) => {
+			const matchesName = player.name.toLowerCase().includes(nameValue);
+			const playerProvinceValue = normalizeProvince(player.province);
+			const matchesProvince =
+				!provinceValue || playerProvinceValue === provinceValue;
+
+			player.element?.classList.toggle(
+				'hide',
+				!(matchesName && matchesProvince),
+			);
+		});
+	} else if (currentLeaderboardMode === 'provinces') {
+		provinceList.forEach((prov) => {
+			const matchesName =
+				prov.name.toLowerCase().includes(nameValue) ||
+				prov.code.toLowerCase().includes(nameValue);
+			prov.element?.classList.toggle('hide', !matchesName);
+		});
+	}
 }
 
 function buildProvinceDropdown() {
@@ -255,11 +280,12 @@ function updatePlayerNameEditability() {
 		return;
 	}
 
-	const canEdit = isSignedIn && selectedPlayerIndex >= 0;
+	const canEdit =
+		isSignedIn &&
+		currentLeaderboardMode === 'players' &&
+		selectedPlayerIndex >= 0;
 	playerName.classList.toggle('editable-player-name', canEdit);
-	playerName.title = canEdit
-		? 'Click to edit player details'
-		: '';
+	playerName.title = canEdit ? 'Click to edit player details' : '';
 }
 
 function isPackCompletedByPlayer(pack, player) {
@@ -331,6 +357,12 @@ function renderCompletedPacks(player) {
 async function renderSelectedPlayer(index) {
 	const player = playerList[index];
 	selectedPlayerIndex = index;
+
+	setText(rankLabel, 'Rank:');
+	setText(completionsLabel, 'Completions:');
+	setText(hardestLabel, 'Hardest Demon:');
+	setText(pointsLabel, 'Points:');
+	setText(completionsTitle, 'Completions');
 
 	if (!player) {
 		selectedPlayerIndex = -1;
@@ -515,6 +547,76 @@ async function loadData() {
 	});
 
 	playerList.sort((a, b) => b.points - a.points);
+
+	// Group players by province & compute unique levels beaten per province
+	const provinceMap = new Map();
+	playerList.forEach((player) => {
+		const code = normalizeProvince(player.province);
+		if (!code) {
+			return;
+		}
+
+		if (!provinceMap.has(code)) {
+			provinceMap.set(code, {
+				code,
+				name: getProvinceName(code),
+				players: [],
+				uniqueLevelsMap: new Map(),
+			});
+		}
+
+		const provData = provinceMap.get(code);
+		provData.players.push(player);
+
+		const records = getSortedRecords(player);
+		records.forEach((record) => {
+			const key = normalizeKey(record.name);
+			if (!provData.uniqueLevelsMap.has(key)) {
+				provData.uniqueLevelsMap.set(key, record);
+			} else {
+				const existing = provData.uniqueLevelsMap.get(key);
+				if (!existing.first && record.first) {
+					provData.uniqueLevelsMap.set(key, record);
+				}
+			}
+		});
+	});
+
+	provinceList.length = 0;
+	provinceMap.forEach((provData, code) => {
+		const uniqueRecords = Array.from(provData.uniqueLevelsMap.values()).sort(
+			(a, b) =>
+				getPositionFromLevelName(a.name) - getPositionFromLevelName(b.name),
+		);
+		const hardest = uniqueRecords.length ? uniqueRecords[0] : null;
+		const totalPoints = provData.players.reduce(
+			(sum, p) => sum + (p.points || 0),
+			0,
+		);
+
+		provinceList.push({
+			code,
+			name: provData.name,
+			players: provData.players,
+			uniqueCount: uniqueRecords.length,
+			uniqueRecords,
+			hardest,
+			totalPoints,
+		});
+	});
+
+	// Primary sort: Unique levels beaten (descending)
+	// Tie-breaker 1: Total points (descending)
+	// Tie-breaker 2: Name (alphabetical)
+	provinceList.sort((a, b) => {
+		if (b.uniqueCount !== a.uniqueCount) {
+			return b.uniqueCount - a.uniqueCount;
+		}
+		if (b.totalPoints !== a.totalPoints) {
+			return b.totalPoints - a.totalPoints;
+		}
+		return a.name.localeCompare(b.name);
+	});
 }
 
 function renderLeaderboard() {
@@ -532,6 +634,189 @@ function renderLeaderboard() {
 
 	buildProvinceDropdown();
 	applyFilters();
+}
+
+function createProvinceListItem(province, displayRank) {
+	const row = document.createElement('div');
+	row.className =
+		displayRank % 2 === 0 ? 'province-container-2' : 'province-container-1';
+	row.addEventListener('click', () => {
+		renderSelectedProvince(provinceList.indexOf(province));
+	});
+
+	const provinceImage = document.createElement('img');
+	provinceImage.src = `./assets/${province.code}.png`;
+	provinceImage.alt = `${province.name} flag`;
+	row.append(provinceImage);
+
+	const textWrapper = document.createElement('div');
+	const nameHeading = document.createElement('h2');
+	setText(nameHeading, `#${displayRank} - ${province.name}`);
+
+	const countHeading = document.createElement('h3');
+	const playerText = province.players.length === 1 ? 'player' : 'players';
+	const pointsFormatted = Number.isFinite(province.totalPoints)
+		? province.totalPoints.toFixed(2)
+		: '0.00';
+
+	const playerSpan = document.createElement('span');
+	setText(playerSpan, playerText);
+
+	countHeading.append(
+		document.createTextNode(`${pointsFormatted} • ${province.players.length} `),
+		playerSpan,
+	);
+
+	textWrapper.append(nameHeading, countHeading);
+	row.append(textWrapper);
+
+	const listItem = document.createElement('li');
+	listItem.append(row);
+	province.element = listItem;
+	return listItem;
+}
+
+function renderProvinceLeaderboard() {
+	if (!provincesListElement) {
+		return;
+	}
+
+	provincesListElement.innerHTML = '';
+
+	let displayRank = 1;
+	provinceList.forEach((province) => {
+		if (province.uniqueCount === 0) {
+			return;
+		}
+
+		provincesListElement.append(createProvinceListItem(province, displayRank));
+		displayRank += 1;
+	});
+
+	applyFilters();
+}
+
+function renderSelectedProvince(index) {
+	const province = provinceList[index];
+	selectedProvinceIndex = index;
+
+	setText(rankLabel, 'Rank:');
+	setText(completionsLabel, 'Completions:');
+	setText(hardestLabel, 'Hardest Demon:');
+	setText(pointsLabel, 'Players:');
+	setText(completionsTitle, 'Completions');
+
+	if (!province) {
+		selectedProvinceIndex = -1;
+		setText(playerName, 'No provinces');
+		setText(rankText, '-');
+		setText(completionsText, '0');
+		setText(hardestText, '-');
+		setText(pointsText, '0');
+		completionsList.innerHTML = '';
+		if (provincePlayersList) provincePlayersList.innerHTML = '';
+		if (playerProvince) playerProvince.src = '';
+		updatePlayerNameEditability();
+		return;
+	}
+
+	setText(playerName, province.name);
+	if (playerProvince) {
+		playerProvince.src = `./assets/${province.code}.png`;
+	}
+
+	const firstVictories = (province.uniqueRecords ?? []).filter(
+		(record) => record.first,
+	).length;
+
+	setText(rankText, `#${index + 1}`);
+	setText(completionsText, `${province.uniqueCount} (${firstVictories} FVs)`);
+	setText(hardestText, province.hardest?.name ?? '-');
+	setText(pointsText, `${province.players.length}`);
+
+	renderCompletions(province.uniqueRecords);
+
+	if (provincePlayersList) {
+		provincePlayersList.innerHTML = '';
+		province.players.forEach((player) => {
+			const item = document.createElement('li');
+			item.className = 'province-player-row';
+
+			const playerRank = playerList.indexOf(player) + 1;
+
+			const rankSpan = document.createElement('span');
+			rankSpan.className = 'province-player-rank';
+			setText(rankSpan, `#${playerRank}`);
+
+			const nameSpan = document.createElement('span');
+			nameSpan.className = 'province-player-name';
+			setText(nameSpan, player.name);
+
+			const ptsSpan = document.createElement('span');
+			ptsSpan.className = 'province-player-pts';
+
+			const pointsFormatted = Number.isFinite(player.points)
+				? player.points.toFixed(2)
+				: '0.00';
+			setText(ptsSpan, pointsFormatted);
+
+			item.append(rankSpan, nameSpan, ptsSpan);
+
+			item.addEventListener('click', () => {
+				switchMode('players');
+				const pIdx = playerList.indexOf(player);
+				if (pIdx >= 0) {
+					renderSelectedPlayer(pIdx);
+				}
+			});
+
+			provincePlayersList.append(item);
+		});
+	}
+
+	updatePlayerNameEditability();
+}
+
+function switchMode(mode) {
+	currentLeaderboardMode = mode;
+
+	if (mode === 'players') {
+		tabPlayers?.classList.add('active');
+		tabProvinces?.classList.remove('active');
+
+		leaderboard?.classList.remove('hide');
+		provincesListElement?.classList.add('hide');
+
+		provinceFilter?.classList.remove('hide');
+		if (playerSearch) {
+			playerSearch.placeholder = 'Search for player...';
+		}
+
+		packsContainer?.classList.remove('hide');
+		provincePlayersContainer?.classList.add('hide');
+
+		applyFilters();
+		renderSelectedPlayer(selectedPlayerIndex >= 0 ? selectedPlayerIndex : 0);
+	} else if (mode === 'provinces') {
+		tabProvinces?.classList.add('active');
+		tabPlayers?.classList.remove('active');
+
+		leaderboard?.classList.add('hide');
+		provincesListElement?.classList.remove('hide');
+
+		provinceFilter?.classList.add('hide');
+		if (playerSearch) {
+			playerSearch.placeholder = 'Search for province...';
+		}
+
+		packsContainer?.classList.add('hide');
+		provincePlayersContainer?.classList.remove('hide');
+
+		applyFilters();
+		renderSelectedProvince(
+			selectedProvinceIndex >= 0 ? selectedProvinceIndex : 0,
+		);
+	}
 }
 
 function closeEditPlayerPopup() {
@@ -910,6 +1195,9 @@ document.addEventListener('keydown', (event) => {
 	}
 });
 
+tabPlayers?.addEventListener('click', () => switchMode('players'));
+tabProvinces?.addEventListener('click', () => switchMode('provinces'));
+
 editPlayerForm?.addEventListener('submit', handleEditPlayerSubmit);
 playerSearch?.addEventListener('input', applyFilters);
 provinceFilter?.addEventListener('change', applyFilters);
@@ -917,6 +1205,7 @@ provinceFilter?.addEventListener('change', applyFilters);
 loadData()
 	.then(() => {
 		renderLeaderboard();
+		renderProvinceLeaderboard();
 		return renderSelectedPlayer(0);
 	})
 	.catch((error) => {
