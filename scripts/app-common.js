@@ -25,6 +25,19 @@ export const db = getDatabase(app);
 export const auth = getAuth(app);
 export const storage = getStorage(app);
 
+// Configurable multiplier for pack completion bonus points (0.10 = 10% of sum of level points)
+export const PACK_BONUS_MULTIPLIER = 0.10;
+
+export function calculatePackLevelPointsSum(packLevels, levelPositionByName, calculatePointsFn) {
+	if (!Array.isArray(packLevels) || !packLevels.length) {
+		return 0;
+	}
+	return packLevels.reduce((total, levelName) => {
+		const pos = levelPositionByName.get(levelName) ?? Infinity;
+		return total + (typeof calculatePointsFn === 'function' ? calculatePointsFn(pos) : 0);
+	}, 0);
+}
+
 export function byId(id) {
 	return document.getElementById(id);
 }

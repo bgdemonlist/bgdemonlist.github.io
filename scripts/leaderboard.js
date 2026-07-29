@@ -13,6 +13,8 @@ import {
 	initAuthNavigation,
 	normalizeKey,
 	setText,
+	PACK_BONUS_MULTIPLIER,
+	calculatePackLevelPointsSum,
 } from './app-common.js';
 
 const PROVINCE_MAP = {
@@ -407,11 +409,23 @@ async function loadData() {
 	allPacksList.length = 0;
 	levelPositionByName.clear();
 
-	const [usersSnapshot, levelsSnapshot, packsSnapshot] = await Promise.all([
+	const [usersSnapshot, levelsSnapshot, packsSnapshot, tiersSnapshot] = await Promise.all([
 		get(ref(db, 'users')),
 		get(query(ref(db, 'levels'), orderByChild('pos'))),
 		get(ref(db, 'packs')),
+		get(ref(db, 'tiers')),
 	]);
+
+	const tiersMap = new Map();
+	tiersSnapshot.forEach((snap) => {
+		const tier = snap.val();
+		if (tier && tier.name) {
+			tiersMap.set(snap.key, {
+				key: snap.key,
+				...tier,
+			});
+		}
+	});
 
 	levelsSnapshot.forEach((levelSnapshot) => {
 		const level = levelSnapshot.val();
@@ -425,9 +439,12 @@ async function loadData() {
 	packsSnapshot.forEach((packSnapshot) => {
 		const pack = packSnapshot.val();
 		if (pack && pack.name && Array.isArray(pack.levels)) {
+			const assignedTier = pack.tierId ? tiersMap.get(pack.tierId) : null;
 			allPacksList.push({
 				key: packSnapshot.key,
 				...pack,
+				color: assignedTier ? assignedTier.color : (pack.color || '#e2495c'),
+				tierName: assignedTier ? assignedTier.name : null,
 			});
 		}
 	});
@@ -437,6 +454,17 @@ async function loadData() {
 			(typeof a.pos === 'number' ? a.pos : 9999) -
 			(typeof b.pos === 'number' ? b.pos : 9999),
 	);
+
+	// Compute completion bonus points per pack
+	allPacksList.forEach((pack) => {
+		const baseSum = calculatePackLevelPointsSum(
+			pack.levels,
+			levelPositionByName,
+			calculatePoints,
+		);
+		pack.baseLevelPointsSum = baseSum;
+		pack.bonusPoints = baseSum * PACK_BONUS_MULTIPLIER;
+	});
 
 	usersSnapshot.forEach((userSnapshot) => {
 		const player = userSnapshot.val();
@@ -452,15 +480,26 @@ async function loadData() {
 				: currentHardest;
 		}, records[0]);
 
-		const points = records.reduce((total, record) => {
+		const baseLevelPoints = records.reduce((total, record) => {
 			return total + calculatePoints(getPositionFromLevelName(record.name));
 		}, 0);
+
+		let packBonusPoints = 0;
+		allPacksList.forEach((pack) => {
+			if (isPackCompletedByPlayer(pack, player)) {
+				packBonusPoints += pack.bonusPoints || 0;
+			}
+		});
+
+		const totalPoints = baseLevelPoints + packBonusPoints;
 
 		playerList.push({
 			...player,
 			userKey: userSnapshot.key,
 			hardest,
-			points,
+			baseLevelPoints,
+			packBonusPoints,
+			points: totalPoints,
 		});
 	});
 
@@ -751,6 +790,23 @@ function renderPacksModalContent(highlightPackKey = null) {
 		setText(titleText, pack.name);
 
 		titleDiv.append(titleText);
+
+		if (pack.tierName) {
+			const tierBadge = document.createElement('span');
+			tierBadge.className = 'pack-tier-tag';
+			tierBadge.style.backgroundColor = `${pack.color || '#e2495c'}22`;
+			tierBadge.style.color = pack.color || '#e2495c';
+			tierBadge.style.borderColor = pack.color || '#e2495c';
+			setText(tierBadge, pack.tierName);
+			titleDiv.append(tierBadge);
+		}
+
+		if (pack.bonusPoints && pack.bonusPoints > 0) {
+			const bonusTag = document.createElement('span');
+			bonusTag.className = 'pack-bonus-tag';
+			setText(bonusTag, `+${pack.bonusPoints.toFixed(1)} pts bonus`);
+			titleDiv.append(bonusTag);
+		}
 
 		const statusBadge = document.createElement('span');
 		statusBadge.className = isFullyCompleted

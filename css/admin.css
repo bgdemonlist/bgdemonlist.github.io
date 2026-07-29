@@ -95,7 +95,8 @@
 
 .form-group input[type='text'],
 .form-group input[type='email'],
-.form-group input[type='password'] {
+.form-group input[type='password'],
+.form-group select {
 	width: 100%;
 	padding: 10px 14px;
 	background: var(--surface-alt);
@@ -104,6 +105,15 @@
 	color: var(--text);
 	font-size: 0.95rem;
 	transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-group select {
+	cursor: pointer;
+}
+
+.form-group select option {
+	background: var(--surface);
+	color: var(--text);
 }
 
 .form-group input:focus {

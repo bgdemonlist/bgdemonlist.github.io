@@ -29,6 +29,7 @@ const packForm = byId('pack-form');
 const packFormTitle = byId('pack-form-title');
 const packIdInput = byId('pack-id');
 const packNameInput = byId('pack-name');
+const packTierSelect = byId('pack-tier');
 const packColorInput = byId('pack-color');
 const packColorHexInput = byId('pack-color-hex');
 const colorPreviewChip = byId('color-preview-chip');
@@ -39,8 +40,21 @@ const packSubmitBtn = byId('pack-submit-btn');
 const packCancelBtn = byId('pack-cancel-btn');
 const packsListContainer = byId('packs-list-container');
 
+// Tier form elements
+const tierForm = byId('tier-form');
+const tierFormTitle = byId('tier-form-title');
+const tierIdInput = byId('tier-id');
+const tierNameInput = byId('tier-name');
+const tierColorInput = byId('tier-color');
+const tierColorHexInput = byId('tier-color-hex');
+const tierColorPreviewChip = byId('tier-color-preview-chip');
+const tierSubmitBtn = byId('tier-submit-btn');
+const tierCancelBtn = byId('tier-cancel-btn');
+const tiersListContainer = byId('tiers-list-container');
+
 let levelsList = [];
 let packsList = [];
+let tiersList = [];
 
 // Initialize shared nav auth listener
 initAuthNavigation();
@@ -87,6 +101,37 @@ if (packColorInput && packColorHexInput && colorPreviewChip) {
 	});
 }
 
+if (tierColorInput && tierColorHexInput && tierColorPreviewChip) {
+	tierColorInput.addEventListener('input', (e) => {
+		const val = e.target.value.toUpperCase();
+		tierColorHexInput.value = val;
+		tierColorPreviewChip.style.backgroundColor = val;
+	});
+
+	tierColorHexInput.addEventListener('input', (e) => {
+		let val = e.target.value.trim();
+		if (!val.startsWith('#')) {
+			val = '#' + val;
+		}
+		if (/^#[0-9A-FA-F]{6}$/.test(val)) {
+			tierColorInput.value = val;
+			tierColorPreviewChip.style.backgroundColor = val;
+		}
+	});
+}
+
+if (packTierSelect) {
+	packTierSelect.addEventListener('change', () => {
+		const selectedTierId = packTierSelect.value;
+		const tier = tiersList.find((t) => t.key === selectedTierId);
+		if (tier && tier.color) {
+			if (packColorInput) packColorInput.value = tier.color;
+			if (packColorHexInput) packColorHexInput.value = tier.color.toUpperCase();
+			if (colorPreviewChip) colorPreviewChip.style.backgroundColor = tier.color;
+		}
+	});
+}
+
 if (levelSearchInput) {
 	levelSearchInput.addEventListener('input', filterLevelCheckboxes);
 }
@@ -97,6 +142,14 @@ if (packForm) {
 
 if (packCancelBtn) {
 	packCancelBtn.addEventListener('click', resetPackForm);
+}
+
+if (tierForm) {
+	tierForm.addEventListener('submit', handleTierFormSubmit);
+}
+
+if (tierCancelBtn) {
+	tierCancelBtn.addEventListener('click', resetTierForm);
 }
 
 async function handleLogin(e) {
@@ -127,7 +180,7 @@ async function handleLogin(e) {
 }
 
 async function loadAdminData() {
-	await Promise.all([loadLevels(), loadPacks()]);
+	await Promise.all([loadLevels(), loadTiers(), loadPacks()]);
 }
 
 async function loadLevels() {
@@ -230,7 +283,9 @@ async function handlePackFormSubmit(e) {
 	e.preventDefault();
 
 	const name = packNameInput?.value.trim();
-	const color = packColorInput?.value || '#e2495c';
+	const tierId = packTierSelect?.value.trim() || null;
+	const selectedTier = tiersList.find((t) => t.key === tierId);
+	const color = selectedTier ? selectedTier.color : (packColorInput?.value || '#e2495c');
 	const selectedLevels = getSelectedLevelNames();
 	const existingId = packIdInput?.value.trim();
 
@@ -256,6 +311,7 @@ async function handlePackFormSubmit(e) {
 		const packData = {
 			id: packKey,
 			name,
+			tierId: tierId || null,
 			color,
 			levels: selectedLevels,
 			pos,
@@ -280,6 +336,7 @@ function resetPackForm() {
 	if (packFormTitle) setText(packFormTitle, 'Create Level Pack');
 	if (packSubmitBtn) setText(packSubmitBtn, 'Create Pack');
 	if (packCancelBtn) packCancelBtn.classList.add('hide');
+	if (packTierSelect) packTierSelect.value = '';
 	if (packColorInput) packColorInput.value = '#e2495c';
 	if (packColorHexInput) packColorHexInput.value = '#E2495C';
 	if (colorPreviewChip) colorPreviewChip.style.backgroundColor = '#e2495c';
@@ -287,6 +344,241 @@ function resetPackForm() {
 
 	setSelectedLevelNames([]);
 	filterLevelCheckboxes();
+}
+
+async function loadTiers() {
+	if (!tiersListContainer) return;
+	tiersListContainer.innerHTML = '<div class="loading-text">Loading tiers...</div>';
+
+	try {
+		const tiersSnapshot = await get(ref(db, 'tiers'));
+		tiersList = [];
+		tiersSnapshot.forEach((snap) => {
+			const val = snap.val();
+			if (val && val.name) {
+				tiersList.push({
+					key: snap.key,
+					...val,
+				});
+			}
+		});
+
+		tiersList.sort(
+			(a, b) =>
+				(typeof a.pos === 'number' ? a.pos : 9999) -
+				(typeof b.pos === 'number' ? b.pos : 9999),
+		);
+
+		populatePackTierSelect();
+		renderTiersList();
+	} catch (err) {
+		console.error('Failed to load tiers:', err);
+		tiersListContainer.innerHTML = '<div class="error-msg">Failed to load pack tiers.</div>';
+	}
+}
+
+function populatePackTierSelect() {
+	if (!packTierSelect) return;
+	const currentVal = packTierSelect.value;
+	packTierSelect.innerHTML = '<option value="">No Tier (Use Custom Color)</option>';
+
+	tiersList.forEach((tier) => {
+		const opt = document.createElement('option');
+		opt.value = tier.key;
+		setText(opt, tier.name);
+		packTierSelect.append(opt);
+	});
+
+	packTierSelect.value = currentVal;
+}
+
+function renderTiersList() {
+	if (!tiersListContainer) return;
+	tiersListContainer.innerHTML = '';
+
+	if (!tiersList.length) {
+		tiersListContainer.innerHTML = '<div class="loading-text">No pack tiers created yet.</div>';
+		return;
+	}
+
+	tiersList.forEach((tier, index) => {
+		const item = document.createElement('div');
+		item.className = 'pack-card-item';
+		item.style.setProperty('--pack-color', tier.color || '#ffd700');
+
+		const topRow = document.createElement('div');
+		topRow.className = 'pack-item-top';
+
+		const titleBadge = document.createElement('div');
+		titleBadge.className = 'pack-title-badge';
+
+		const colorDot = document.createElement('span');
+		colorDot.className = 'pack-color-dot';
+		colorDot.style.backgroundColor = tier.color || '#ffd700';
+
+		const nameText = document.createElement('span');
+		nameText.className = 'pack-name-text';
+		setText(nameText, `#${index + 1} - ${tier.name}`);
+
+		titleBadge.append(colorDot, nameText);
+
+		const actions = document.createElement('div');
+		actions.className = 'pack-item-actions';
+
+		const orderControls = document.createElement('div');
+		orderControls.className = 'pack-order-controls';
+
+		if (index > 0) {
+			const upBtn = document.createElement('button');
+			upBtn.className = 'btn-order';
+			upBtn.type = 'button';
+			upBtn.setAttribute('aria-label', 'Move Tier Up');
+			upBtn.innerHTML = '<i class="fa-solid fa-angle-up"></i>';
+			upBtn.addEventListener('click', () => moveTier(index, -1));
+			orderControls.append(upBtn);
+		}
+
+		if (index < tiersList.length - 1) {
+			const downBtn = document.createElement('button');
+			downBtn.className = 'btn-order';
+			downBtn.type = 'button';
+			downBtn.setAttribute('aria-label', 'Move Tier Down');
+			downBtn.innerHTML = '<i class="fa-solid fa-angle-down"></i>';
+			downBtn.addEventListener('click', () => moveTier(index, 1));
+			orderControls.append(downBtn);
+		}
+
+		const editBtn = document.createElement('button');
+		editBtn.className = 'btn-edit';
+		editBtn.type = 'button';
+		setText(editBtn, 'Edit');
+		editBtn.addEventListener('click', () => editTier(tier));
+
+		const deleteBtn = document.createElement('button');
+		deleteBtn.className = 'btn-danger';
+		deleteBtn.type = 'button';
+		setText(deleteBtn, 'Delete');
+		deleteBtn.addEventListener('click', () => deleteTier(tier));
+
+		actions.append(orderControls, editBtn, deleteBtn);
+		topRow.append(titleBadge, actions);
+		item.append(topRow);
+		tiersListContainer.append(item);
+	});
+}
+
+async function moveTier(currentIndex, direction) {
+	const targetIndex = currentIndex + direction;
+	if (currentIndex < 0 || targetIndex < 0 || targetIndex >= tiersList.length) {
+		return;
+	}
+
+	const currentTier = tiersList[currentIndex];
+	const targetTier = tiersList[targetIndex];
+
+	const currentPos = targetIndex + 1;
+	const targetPos = currentIndex + 1;
+
+	try {
+		await Promise.all([
+			update(ref(db, `tiers/${currentTier.key}`), { pos: currentPos }),
+			update(ref(db, `tiers/${targetTier.key}`), { pos: targetPos }),
+		]);
+		await loadTiers();
+		await loadPacks();
+	} catch (err) {
+		console.error('Failed to move tier:', err);
+		alert('Failed to re-order tier: ' + err.message);
+	}
+}
+
+async function handleTierFormSubmit(e) {
+	e.preventDefault();
+
+	const name = tierNameInput?.value.trim();
+	const color = tierColorInput?.value || '#ffd700';
+	const existingId = tierIdInput?.value.trim();
+
+	if (!name) {
+		alert('Please enter a tier name.');
+		return;
+	}
+
+	if (tierSubmitBtn) tierSubmitBtn.disabled = true;
+
+	try {
+		const tierKey = existingId || sanitizePackKey(name);
+		const existingTier = tiersList.find((t) => t.key === tierKey);
+		const pos = existingTier && typeof existingTier.pos === 'number'
+			? existingTier.pos
+			: tiersList.length + 1;
+
+		const tierData = {
+			id: tierKey,
+			name,
+			color,
+			pos,
+			updatedAt: Date.now(),
+		};
+
+		await set(ref(db, `tiers/${tierKey}`), tierData);
+
+		resetTierForm();
+		await loadTiers();
+		await loadPacks();
+	} catch (err) {
+		console.error('Failed to save tier:', err);
+		alert('Error saving pack tier: ' + err.message);
+	} finally {
+		if (tierSubmitBtn) tierSubmitBtn.disabled = false;
+	}
+}
+
+function resetTierForm() {
+	if (tierForm) tierForm.reset();
+	if (tierIdInput) tierIdInput.value = '';
+	if (tierFormTitle) setText(tierFormTitle, 'Create Pack Tier');
+	if (tierSubmitBtn) setText(tierSubmitBtn, 'Create Tier');
+	if (tierCancelBtn) tierCancelBtn.classList.add('hide');
+	if (tierColorInput) tierColorInput.value = '#ffd700';
+	if (tierColorHexInput) tierColorHexInput.value = '#FFD700';
+	if (tierColorPreviewChip) tierColorPreviewChip.style.backgroundColor = '#ffd700';
+}
+
+function editTier(tier) {
+	if (!tier) return;
+	if (tierIdInput) tierIdInput.value = tier.key || tier.id || '';
+	if (tierNameInput) tierNameInput.value = tier.name || '';
+
+	const color = tier.color || '#ffd700';
+	if (tierColorInput) tierColorInput.value = color;
+	if (tierColorHexInput) tierColorHexInput.value = color.toUpperCase();
+	if (tierColorPreviewChip) tierColorPreviewChip.style.backgroundColor = color;
+
+	if (tierFormTitle) setText(tierFormTitle, 'Edit Pack Tier');
+	if (tierSubmitBtn) setText(tierSubmitBtn, 'Save Tier');
+	if (tierCancelBtn) tierCancelBtn.classList.remove('hide');
+
+	tierForm?.scrollIntoView({ behavior: 'smooth' });
+}
+
+async function deleteTier(tier) {
+	if (!tier || !tier.key) return;
+	if (!confirm(`Are you sure you want to delete pack tier "${tier.name}"?`)) {
+		return;
+	}
+
+	try {
+		await remove(ref(db, `tiers/${tier.key}`));
+		await loadTiers();
+		await loadPacks();
+		if (tierIdInput?.value === tier.key) {
+			resetTierForm();
+		}
+	} catch (err) {
+		console.error('Failed to delete tier:', err);
+		alert('Error deleting pack tier: ' + err.message);
+	}
 }
 
 async function loadPacks() {
@@ -299,9 +591,12 @@ async function loadPacks() {
 		packsSnapshot.forEach((snap) => {
 			const val = snap.val();
 			if (val && val.name) {
+				const assignedTier = val.tierId ? tiersList.find((t) => t.key === val.tierId) : null;
 				packsList.push({
 					key: snap.key,
 					...val,
+					color: assignedTier ? assignedTier.color : (val.color || '#e2495c'),
+					tierName: assignedTier ? assignedTier.name : null,
 				});
 			}
 		});
@@ -370,7 +665,8 @@ function renderPacksList() {
 
 		const nameText = document.createElement('span');
 		nameText.className = 'pack-name-text';
-		setText(nameText, `#${index + 1} - ${pack.name}`);
+		const tierLabel = pack.tierName ? ` [${pack.tierName}]` : '';
+		setText(nameText, `#${index + 1} - ${pack.name}${tierLabel}`);
 
 		titleBadge.append(colorDot, nameText);
 
@@ -435,6 +731,7 @@ function editPack(pack) {
 	if (!pack) return;
 	if (packIdInput) packIdInput.value = pack.key || pack.id || '';
 	if (packNameInput) packNameInput.value = pack.name || '';
+	if (packTierSelect) packTierSelect.value = pack.tierId || '';
 
 	const color = pack.color || '#e2495c';
 	if (packColorInput) packColorInput.value = color;

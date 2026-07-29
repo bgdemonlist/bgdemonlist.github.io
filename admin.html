@@ -74,6 +74,13 @@
 							</div>
 
 							<div class="form-group">
+								<label for="pack-tier">Pack Tier</label>
+								<select id="pack-tier">
+									<option value="">No Tier (Use Custom Color)</option>
+								</select>
+							</div>
+
+							<div class="form-group">
 								<label for="pack-color">Pack Color</label>
 								<div class="color-picker-row">
 									<input id="pack-color" type="color" value="#e2495c" />
@@ -111,6 +118,41 @@
 						</div>
 						<div id="packs-list-container" class="packs-list">
 							<div class="loading-text">Loading packs...</div>
+						</div>
+					</div>
+
+					<!-- Tier Form & List Card -->
+					<div class="admin-card">
+						<div class="card-header">
+							<i class="fa-solid fa-tags" aria-hidden="true"></i>
+							<h2 id="tier-form-title">Create Pack Tier</h2>
+						</div>
+						<form id="tier-form">
+							<input id="tier-id" type="hidden" />
+							<div class="form-group">
+								<label for="tier-name">Tier Name</label>
+								<input id="tier-name" type="text" placeholder="e.g. Gold Tier..." required />
+							</div>
+							<div class="form-group">
+								<label for="tier-color">Tier Color</label>
+								<div class="color-picker-row">
+									<input id="tier-color" type="color" value="#ffd700" />
+									<input id="tier-color-hex" type="text" value="#FFD700" placeholder="#FFD700" maxlength="7" />
+									<div id="tier-color-preview-chip" class="color-preview-chip" style="background-color: #ffd700;">Sample</div>
+								</div>
+							</div>
+							<div class="form-actions">
+								<button id="tier-cancel-btn" type="button" class="btn-secondary hide">Cancel</button>
+								<button id="tier-submit-btn" type="submit" class="btn-primary">Create Tier</button>
+							</div>
+						</form>
+
+						<div class="card-header" style="margin-top: 28px;">
+							<i class="fa-solid fa-list-ol" aria-hidden="true"></i>
+							<h2>Existing Pack Tiers</h2>
+						</div>
+						<div id="tiers-list-container" class="packs-list">
+							<div class="loading-text">Loading tiers...</div>
 						</div>
 					</div>
 				</div>

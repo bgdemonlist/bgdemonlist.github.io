@@ -566,13 +566,34 @@
 .modal-pack-title {
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	gap: 8px;
+	flex-wrap: wrap;
 }
 
 .modal-pack-title h3 {
 	font-size: 1.15rem;
 	font-weight: 800;
 	color: var(--text);
+}
+
+.pack-tier-tag {
+	font-size: 0.72rem;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: var(--radius-pill);
+	border: 1px solid currentColor;
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+}
+
+.pack-bonus-tag {
+	font-size: 0.75rem;
+	font-weight: 700;
+	padding: 2px 8px;
+	border-radius: var(--radius-pill);
+	background: var(--accent-soft);
+	color: var(--accent-strong);
+	border: 1px solid var(--accent);
 }
 
 .pack-status-badge {
