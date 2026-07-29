@@ -489,17 +489,23 @@ async function moveTier(currentIndex, direction) {
 		return;
 	}
 
-	const currentTier = tiersList[currentIndex];
-	const targetTier = tiersList[targetIndex];
+	const newTiersList = [...tiersList];
+	const currentTier = newTiersList[currentIndex];
+	newTiersList[currentIndex] = newTiersList[targetIndex];
+	newTiersList[targetIndex] = currentTier;
 
-	const currentPos = targetIndex + 1;
-	const targetPos = currentIndex + 1;
+	const updates = {};
+	newTiersList.forEach((tier, idx) => {
+		const newPos = idx + 1;
+		if (tier.pos !== newPos) {
+			updates[`tiers/${tier.key}/pos`] = newPos;
+		}
+	});
 
 	try {
-		await Promise.all([
-			update(ref(db, `tiers/${currentTier.key}`), { pos: currentPos }),
-			update(ref(db, `tiers/${targetTier.key}`), { pos: targetPos }),
-		]);
+		if (Object.keys(updates).length > 0) {
+			await update(ref(db), updates);
+		}
 		await loadTiers();
 		await loadPacks();
 	} catch (err) {
@@ -646,17 +652,35 @@ async function movePack(currentIndex, direction) {
 		return;
 	}
 
-	const currentPack = packsList[currentIndex];
-	const targetPack = packsList[targetIndex];
+	const newPacksList = [...packsList];
+	const currentPack = newPacksList[currentIndex];
+	newPacksList[currentIndex] = newPacksList[targetIndex];
+	newPacksList[targetIndex] = currentPack;
 
-	const currentPos = targetIndex + 1;
-	const targetPos = currentIndex + 1;
+	const updates = {};
+	const packsByTier = new Map();
+
+	newPacksList.forEach((pack) => {
+		const tierKey = pack.tierId || '__no_tier__';
+		if (!packsByTier.has(tierKey)) {
+			packsByTier.set(tierKey, []);
+		}
+		packsByTier.get(tierKey).push(pack);
+	});
+
+	packsByTier.forEach((groupPacks) => {
+		groupPacks.forEach((p, idx) => {
+			const newPos = idx + 1;
+			if (p.pos !== newPos) {
+				updates[`packs/${p.key}/pos`] = newPos;
+			}
+		});
+	});
 
 	try {
-		await Promise.all([
-			update(ref(db, `packs/${currentPack.key}`), { pos: currentPos }),
-			update(ref(db, `packs/${targetPack.key}`), { pos: targetPos }),
-		]);
+		if (Object.keys(updates).length > 0) {
+			await update(ref(db), updates);
+		}
 		await loadPacks();
 	} catch (err) {
 		console.error('Failed to move pack:', err);
