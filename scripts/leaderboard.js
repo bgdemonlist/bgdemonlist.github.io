@@ -605,15 +605,15 @@ async function loadData() {
 		});
 	});
 
-	// Primary sort: Unique levels beaten (descending)
-	// Tie-breaker 1: Total points (descending)
+	// Primary sort: Total points (descending)
+	// Tie-breaker 1: Unique levels beaten (descending)
 	// Tie-breaker 2: Name (alphabetical)
 	provinceList.sort((a, b) => {
-		if (b.uniqueCount !== a.uniqueCount) {
-			return b.uniqueCount - a.uniqueCount;
-		}
 		if (b.totalPoints !== a.totalPoints) {
 			return b.totalPoints - a.totalPoints;
+		}
+		if (b.uniqueCount !== a.uniqueCount) {
+			return b.uniqueCount - a.uniqueCount;
 		}
 		return a.name.localeCompare(b.name);
 	});
