@@ -68,6 +68,7 @@ const TRANSLATIONS = {
 			'Completions:': 'Completion-и:',
 			'Hardest Demon:': 'Най-труден Demon:',
 			'Points:': 'Точки:',
+			'Players:': 'Играчи:',
 			Completions: 'Completion-и',
 			Player: 'Играч',
 			'Edit Player': 'Редактирай играч',
