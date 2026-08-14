@@ -15,6 +15,7 @@ import {
 
 const startScreen = byId('start-screen');
 const gameScreen = byId('game-screen');
+const summaryScreen = byId('summary-screen');
 const resultsSection = byId('results-section');
 const startBtn = byId('start-btn');
 const activeContainer = byId('active-level-container');
@@ -27,6 +28,13 @@ const resultsList = byId('results-list');
 const saveBtn = byId('save-btn');
 const loadBtn = byId('load-btn');
 const loadFileInput = byId('load-file-input');
+const restartBtn = byId('restart-btn');
+const summaryTitle = byId('summary-title');
+const summarySubtitle = byId('summary-subtitle');
+const summaryHistoryList = byId('summary-history-list');
+const summaryRemainingList = byId('summary-remaining-list');
+const summaryHistoryTitle = byId('summary-history-title');
+const summaryRemainingTitle = byId('summary-remaining-title');
 
 let allLevels = [];
 let gameQueue = [];
@@ -37,6 +45,16 @@ let runHistory = [];
 
 initAuthNavigation();
 
+function serializeLevel(level) {
+	if (!level) return null;
+	return {
+		pos: typeof level.pos === 'number' ? level.pos : 0,
+		name: level.name || '',
+		creator: level.creator || 'Unknown creator',
+		video: level.video || '',
+	};
+}
+
 function shuffleArray(array) {
 	for (let index = array.length - 1; index > 0; index -= 1) {
 		const randomIndex = Math.floor(Math.random() * (index + 1));
@@ -46,12 +64,14 @@ function shuffleArray(array) {
 }
 
 function startGameUI() {
-	startScreen.classList.add('hide');
-	gameScreen.classList.remove('hide');
-	resultsSection.classList.remove('hide');
+	startScreen?.classList.add('hide');
+	summaryScreen?.classList.add('hide');
+	gameScreen?.classList.remove('hide');
+	resultsSection?.classList.remove('hide');
 }
 
 function renderCard(level) {
+	if (!activeContainer) return;
 	activeContainer.innerHTML = '';
 
 	const container = document.createElement('div');
@@ -59,8 +79,9 @@ function renderCard(level) {
 
 	const image = document.createElement('img');
 	image.className = 'level-img';
-	image.src = getYouTubeThumbnail(level.video);
+	image.src = getYouTubeThumbnail(level.video, 'maxresdefault') || getYouTubeThumbnail(level.video);
 	image.alt = `${level.name} thumbnail`;
+	image.title = 'Watch completion video';
 	image.addEventListener('click', () => openExternal(level.video));
 
 	const textDiv = document.createElement('div');
@@ -69,24 +90,58 @@ function renderCard(level) {
 	const title = document.createElement('h4');
 	title.className = 'level-name';
 	setText(title, `#${level.pos} - ${level.name}`);
+	title.addEventListener('click', () => openExternal(level.video));
 
 	const creator = document.createElement('p');
 	creator.className = 'level-creator';
-	setText(creator, level.creator, 'Unknown creator');
+	setText(creator, `by ${level.creator || 'Unknown creator'}`);
 
 	textDiv.append(title, creator);
 	container.append(image, textDiv);
 	activeContainer.append(container);
 }
 
-function addHistoryCard(level, got) {
+function createHistoryCard(entry) {
 	const card = document.createElement('div');
 	card.classList.add('level-container', 'result-card');
 
 	const image = document.createElement('img');
 	image.className = 'level-img';
+	image.src = getYouTubeThumbnail(entry.video);
+	image.alt = `${entry.name} thumbnail`;
+	image.title = 'Watch video';
+	image.addEventListener('click', () => openExternal(entry.video));
+
+	const textDiv = document.createElement('div');
+	textDiv.className = 'level-text-container';
+
+	const title = document.createElement('h4');
+	title.className = 'level-name';
+	setText(title, `#${entry.pos} - ${entry.name}`);
+
+	const creator = document.createElement('p');
+	creator.className = 'level-creator';
+	setText(creator, `by ${entry.creator || 'Unknown creator'}`);
+
+	textDiv.append(title, creator);
+
+	const percentDiv = document.createElement('div');
+	percentDiv.className = 'level-percent-display result-percent';
+	setText(percentDiv, `${entry.got}%`);
+
+	card.append(image, textDiv, percentDiv);
+	return card;
+}
+
+function createRemainingCard(level, projectedReq = null) {
+	const card = document.createElement('div');
+	card.classList.add('level-container', 'remaining-card');
+
+	const image = document.createElement('img');
+	image.className = 'level-img';
 	image.src = getYouTubeThumbnail(level.video);
 	image.alt = `${level.name} thumbnail`;
+	image.title = 'Watch video';
 	image.addEventListener('click', () => openExternal(level.video));
 
 	const textDiv = document.createElement('div');
@@ -95,33 +150,104 @@ function addHistoryCard(level, got) {
 	const title = document.createElement('h4');
 	title.className = 'level-name';
 	setText(title, `#${level.pos} - ${level.name}`);
-	const percent = document.createElement('span');
-	percent.className = 'result-percent';
-	setText(percent, `${got}%`);
-	title.append(' ', percent);
 
 	const creator = document.createElement('p');
 	creator.className = 'level-creator';
-	setText(creator, `by ${level.creator ?? 'Unknown creator'}`);
+	setText(creator, `by ${level.creator || 'Unknown creator'}`);
 
 	textDiv.append(title, creator);
-	card.append(image, textDiv);
-	resultsList.insertBefore(card, resultsList.firstChild);
+
+	const percentDiv = document.createElement('div');
+	percentDiv.className = 'level-percent-display remaining-percent';
+	if (typeof projectedReq === 'number') {
+		setText(percentDiv, `${projectedReq}%`);
+	}
+
+	card.append(image, textDiv, percentDiv);
+	return card;
+}
+
+function showRunSummary(isGivenUp = true) {
+	gameScreen?.classList.add('hide');
+	resultsSection?.classList.add('hide');
+	summaryScreen?.classList.remove('hide');
+
+	if (isGivenUp) {
+		setText(summaryTitle, 'Run Ended');
+		setText(
+			summarySubtitle,
+			`You gave up at Round ${round} with a requirement of ${currentReq}%.`,
+		);
+	} else {
+		setText(summaryTitle, 'Congratulations! Run Completed!');
+		setText(
+			summarySubtitle,
+			`You reached 100% requirement in ${runHistory.length} rounds!`,
+		);
+	}
+
+	if (summaryHistoryList) {
+		summaryHistoryList.innerHTML = '';
+		if (runHistory.length === 0) {
+			const msg = document.createElement('p');
+			msg.className = 'empty-list-msg';
+			setText(msg, 'No levels were completed in this run.');
+			summaryHistoryList.append(msg);
+		} else {
+			runHistory.forEach((entry) => {
+				summaryHistoryList.append(createHistoryCard(entry));
+			});
+		}
+	}
+
+	if (summaryHistoryTitle) {
+		setText(summaryHistoryTitle, `Completed Levels (${runHistory.length})`);
+	}
+
+	const remainingLevels = [currentLevel, ...gameQueue].filter(Boolean);
+	if (summaryRemainingList) {
+		summaryRemainingList.innerHTML = '';
+		if (remainingLevels.length === 0) {
+			const msg = document.createElement('p');
+			msg.className = 'empty-list-msg';
+			setText(msg, 'All levels in the queue were completed.');
+			summaryRemainingList.append(msg);
+		} else {
+			remainingLevels.forEach((level, index) => {
+				const projectedReq = Math.min(100, currentReq + index);
+				summaryRemainingList.append(createRemainingCard(level, projectedReq));
+			});
+		}
+	}
+
+	if (summaryRemainingTitle) {
+		setText(summaryRemainingTitle, `Remaining Levels (${remainingLevels.length})`);
+	}
+
+	summaryScreen?.scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function resetGame() {
-	startScreen.classList.remove('hide');
-	gameScreen.classList.add('hide');
-	resultsSection.classList.add('hide');
-	activeContainer.innerHTML = '';
+	startScreen?.classList.remove('hide');
+	gameScreen?.classList.add('hide');
+	summaryScreen?.classList.add('hide');
+	resultsSection?.classList.add('hide');
+	if (activeContainer) activeContainer.innerHTML = '';
+	if (resultsList) resultsList.innerHTML = '';
+	if (summaryHistoryList) summaryHistoryList.innerHTML = '';
+	if (summaryRemainingList) summaryRemainingList.innerHTML = '';
 	currentLevel = null;
+	gameQueue = [];
+	runHistory = [];
+	round = 1;
+	currentReq = 1;
 }
 
 function loadNextLevel() {
 	if (gameQueue.length === 0) {
 		currentLevel = null;
 		alert('You have completed every single level on the list! Incredible.');
-		resetGame();
+		showRunSummary(false);
 		return;
 	}
 
@@ -130,8 +256,10 @@ function loadNextLevel() {
 
 	setText(roundDisplay, String(round));
 	setText(reqDisplay, `${currentReq}%`);
-	percentInput.value = '';
-	percentInput.focus();
+	if (percentInput) {
+		percentInput.value = '';
+		percentInput.focus();
+	}
 }
 
 function saveGame() {
@@ -141,11 +269,19 @@ function saveGame() {
 	}
 
 	const saveObject = {
+		version: 2,
 		currentReq,
 		round,
-		currentLevelPos: currentLevel?.pos ?? null,
-		queuePos: gameQueue.map((level) => level.pos),
-		history: runHistory,
+		currentLevel: serializeLevel(currentLevel),
+		queue: gameQueue.map(serializeLevel),
+		history: runHistory.map((entry) => ({
+			pos: entry.pos,
+			name: entry.name,
+			creator: entry.creator,
+			video: entry.video,
+			req: entry.req,
+			got: entry.got,
+		})),
 	};
 
 	const json = JSON.stringify(saveObject, null, 2);
@@ -165,6 +301,23 @@ function saveGame() {
 }
 
 function restoreQueue(saveObject) {
+	if (
+		Array.isArray(saveObject.queue) &&
+		saveObject.queue.length > 0 &&
+		typeof saveObject.queue[0] === 'object' &&
+		saveObject.queue[0]?.name
+	) {
+		const restoredQueue = saveObject.queue.filter(Boolean);
+		const restoredCurrentLevel =
+			saveObject.currentLevel && saveObject.currentLevel?.name
+				? saveObject.currentLevel
+				: null;
+
+		return restoredCurrentLevel
+			? [restoredCurrentLevel, ...restoredQueue]
+			: restoredQueue;
+	}
+
 	const savedQueuePos = Array.isArray(saveObject.queuePos)
 		? saveObject.queuePos
 		: [];
@@ -181,7 +334,7 @@ function restoreQueue(saveObject) {
 }
 
 function loadGame(event) {
-	const file = event.target.files[0];
+	const file = event.target.files?.[0];
 	if (!file) {
 		return;
 	}
@@ -199,9 +352,9 @@ function loadGame(event) {
 
 			if (gameQueue.length === 0 && runHistory.length > 0) {
 				alert(
-					'Save loaded! All levels in the queue have been played. You may start a new run.',
+					'Save loaded! All levels in the queue have been played. Showing run summary.',
 				);
-				resetGame();
+				showRunSummary(false);
 				return;
 			}
 
@@ -210,11 +363,12 @@ function loadGame(event) {
 				return;
 			}
 
-			resultsList.innerHTML = '';
-			runHistory
-				.slice()
-				.reverse()
-				.forEach((entry) => addHistoryCard(entry, entry.got));
+			if (resultsList) {
+				resultsList.innerHTML = '';
+				runHistory.forEach((entry) => {
+					resultsList.append(createHistoryCard(entry));
+				});
+			}
 
 			startGameUI();
 			loadNextLevel();
@@ -237,10 +391,10 @@ startBtn?.addEventListener('click', () => {
 	}
 
 	runHistory = [];
-	gameQueue = shuffleArray([...allLevels]);
+	gameQueue = shuffleArray([...allLevels]).slice(0, 100);
 	currentReq = 1;
 	round = 1;
-	resultsList.innerHTML = '';
+	if (resultsList) resultsList.innerHTML = '';
 
 	startGameUI();
 	loadNextLevel();
@@ -263,21 +417,24 @@ submitBtn?.addEventListener('click', () => {
 		return;
 	}
 
-	runHistory.push({
+	const historyEntry = {
 		pos: currentLevel.pos,
 		name: currentLevel.name,
 		creator: currentLevel.creator,
 		video: currentLevel.video,
 		req: currentReq,
 		got: inputVal,
-	});
+	};
 
-	addHistoryCard(currentLevel, inputVal);
+	runHistory.push(historyEntry);
+
+	if (resultsList) {
+		resultsList.append(createHistoryCard(historyEntry));
+	}
 
 	currentReq = inputVal + 1;
 	if (currentReq > 100) {
-		alert('Congratulations! You reached the 100% requirement.');
-		resetGame();
+		showRunSummary(false);
 		return;
 	}
 
@@ -285,10 +442,20 @@ submitBtn?.addEventListener('click', () => {
 	loadNextLevel();
 });
 
+percentInput?.addEventListener('keydown', (e) => {
+	if (e.key === 'Enter') {
+		submitBtn?.click();
+	}
+});
+
 giveUpBtn?.addEventListener('click', () => {
 	if (confirm('Are you sure you want to give up?')) {
-		resetGame();
+		showRunSummary(true);
 	}
+});
+
+restartBtn?.addEventListener('click', () => {
+	resetGame();
 });
 
 saveBtn?.addEventListener('click', saveGame);
@@ -316,3 +483,4 @@ get(query(ref(db, 'levels'), orderByChild('pos')))
 		console.error('Failed to load roulette levels.', error);
 		setText(startBtn, 'Failed to Load Levels');
 	});
+

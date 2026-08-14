@@ -246,11 +246,13 @@ function populateEditProvinceOptions(selectedCode = '') {
 
 
 
-function renderCompletions(records) {
+function renderCompletions(records, isProvince = false) {
 	completionsList.innerHTML = '';
 
 	records.forEach((record, index) => {
 		const item = document.createElement('li');
+		item.className = 'completion-item';
+
 		const link = document.createElement('a');
 		link.href = record.video || '#';
 		if (record.video) {
@@ -265,10 +267,30 @@ function renderCompletions(records) {
 		setText(title, record.name, 'Unknown');
 		link.append(title);
 		item.append(link);
+
+		if (isProvince && Array.isArray(record.victors) && record.victors.length > 0) {
+			const tooltip = document.createElement('div');
+			tooltip.className = 'completion-tooltip';
+
+			const header = document.createElement('div');
+			header.className = 'tooltip-header';
+			const count = record.victors.length;
+			const playerWord = count === 1 ? 'player' : 'players';
+			setText(header, `Beaten by ${count} ${playerWord} in this province:`);
+
+			const victorsDiv = document.createElement('div');
+			victorsDiv.className = 'tooltip-victors';
+			setText(victorsDiv, record.victors.join(', '));
+
+			tooltip.append(header, victorsDiv);
+			item.append(tooltip);
+		}
+
 		completionsList.append(item);
 
 		if (index < records.length - 1) {
 			const separator = document.createElement('li');
+			separator.className = 'completion-separator';
 			setText(separator, '-');
 			completionsList.append(separator);
 		}
@@ -391,7 +413,7 @@ async function renderSelectedPlayer(index) {
 	);
 	setText(rankText, `#${index + 1}`);
 	setText(completionsText, `${records.length} (${firstVictories} FVs)`);
-	renderCompletions(records);
+	renderCompletions(records, false);
 	renderCompletedPacks(player);
 
 	if (playerProvince) {
@@ -572,11 +594,22 @@ async function loadData() {
 		records.forEach((record) => {
 			const key = normalizeKey(record.name);
 			if (!provData.uniqueLevelsMap.has(key)) {
-				provData.uniqueLevelsMap.set(key, record);
+				provData.uniqueLevelsMap.set(key, {
+					name: record.name,
+					video: record.video || '',
+					first: Boolean(record.first),
+					victors: [player.name],
+				});
 			} else {
 				const existing = provData.uniqueLevelsMap.get(key);
 				if (!existing.first && record.first) {
-					provData.uniqueLevelsMap.set(key, record);
+					existing.first = true;
+					if (record.video) {
+						existing.video = record.video;
+					}
+				}
+				if (!existing.victors.includes(player.name)) {
+					existing.victors.push(player.name);
 				}
 			}
 		});
@@ -589,8 +622,9 @@ async function loadData() {
 				getPositionFromLevelName(a.name) - getPositionFromLevelName(b.name),
 		);
 		const hardest = uniqueRecords.length ? uniqueRecords[0] : null;
-		const totalPoints = provData.players.reduce(
-			(sum, p) => sum + (p.points || 0),
+		const totalPoints = uniqueRecords.reduce(
+			(sum, record) =>
+				sum + calculatePoints(getPositionFromLevelName(record.name)),
 			0,
 		);
 
@@ -703,7 +737,7 @@ function renderSelectedProvince(index) {
 	setText(rankLabel, 'Rank:');
 	setText(completionsLabel, 'Completions:');
 	setText(hardestLabel, 'Hardest Demon:');
-	setText(pointsLabel, 'Players:');
+	setText(pointsLabel, 'Points:');
 	setText(completionsTitle, 'Completions');
 
 	if (!province) {
@@ -712,7 +746,7 @@ function renderSelectedProvince(index) {
 		setText(rankText, '-');
 		setText(completionsText, '0');
 		setText(hardestText, '-');
-		setText(pointsText, '0');
+		setText(pointsText, '0.00');
 		completionsList.innerHTML = '';
 		if (provincePlayersList) provincePlayersList.innerHTML = '';
 		if (playerProvince) playerProvince.src = '';
@@ -732,9 +766,14 @@ function renderSelectedProvince(index) {
 	setText(rankText, `#${index + 1}`);
 	setText(completionsText, `${province.uniqueCount} (${firstVictories} FVs)`);
 	setText(hardestText, province.hardest?.name ?? '-');
-	setText(pointsText, `${province.players.length}`);
+	setText(
+		pointsText,
+		Number.isFinite(province.totalPoints)
+			? province.totalPoints.toFixed(2)
+			: '0.00',
+	);
 
-	renderCompletions(province.uniqueRecords);
+	renderCompletions(province.uniqueRecords, true);
 
 	if (provincePlayersList) {
 		provincePlayersList.innerHTML = '';

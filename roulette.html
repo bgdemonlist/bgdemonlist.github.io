@@ -27,18 +27,19 @@
     </header>
 
     <section id="roulette-container">
-        <div id="start-screen">
+        <div id="start-screen" class="roulette-card">
             <h1>Extreme Demon Roulette</h1>
-            <button id="start-btn" disabled>Loading Levels...</button>
-            
-            <div class="load-controls">
-                <input type="file" id="load-file-input" accept=".json" style="display: none;">
-                <button id="load-btn" disabled>Load Save File</button>
+            <p class="roulette-subtitle">Play through randomized extreme demons with progressive percentage requirements (1% to 100%).</p>
+            <div class="start-actions">
+                <button id="start-btn" type="button" disabled>Loading Levels...</button>
+                <div class="load-controls">
+                    <input type="file" id="load-file-input" accept=".json" style="display: none;">
+                    <button id="load-btn" type="button" disabled><i class="fa-solid fa-folder-open" aria-hidden="true"></i> Load Save File</button>
+                </div>
             </div>
         </div>
 
         <div id="game-screen" class="hide">
-            
             <div class="status-bar">
                 <div class="status-item">Round: <span id="round-count">1</span></div>
                 <div class="status-item">Requirement: <span id="current-req">1%</span></div>
@@ -46,23 +47,43 @@
 
             <div id="active-level-container"></div>
 
-            <div class="input-area">
-                <label>Percentage Achieved:</label>
+            <div class="input-area roulette-card">
+                <label for="percent-input">Percentage Achieved:</label>
                 <div class="input-group">
-                    <input type="number" id="percent-input" min="0" max="100" placeholder="%">
-                    <button id="submit-btn">NEXT</button>
+                    <input type="number" id="percent-input" min="0" max="100" placeholder="%" autocomplete="off">
+                    <button id="submit-btn" type="button">NEXT <i class="fa-solid fa-arrow-right" aria-hidden="true"></i></button>
                 </div>
                 
                 <div class="game-actions">
-                    <button id="save-btn">Save Game</button> <button id="give-up-btn">Give Up</button>
+                    <button id="save-btn" type="button"><i class="fa-solid fa-floppy-disk" aria-hidden="true"></i> Save Game</button>
+                    <button id="give-up-btn" type="button"><i class="fa-solid fa-flag" aria-hidden="true"></i> Give Up</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="summary-screen" class="hide roulette-card">
+            <div id="summary-header">
+                <h2 id="summary-title">Run Summary</h2>
+                <p id="summary-subtitle">Here are the results of your roulette run.</p>
+                <div class="summary-actions">
+                    <button id="restart-btn" type="button"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Start New Roulette</button>
+                </div>
+            </div>
+            <div id="summary-sections">
+                <div id="summary-history-container">
+                    <h3 id="summary-history-title">Run History</h3>
+                    <div id="summary-history-list" class="roulette-levels-list"></div>
+                </div>
+                <div id="summary-remaining-container">
+                    <h3 id="summary-remaining-title">Remaining Levels</h3>
+                    <div id="summary-remaining-list" class="roulette-levels-list"></div>
                 </div>
             </div>
         </div>
 
         <div id="results-section" class="hide">
             <h3>Run History</h3>
-            <div id="results-list">
-                </div>
+            <div id="results-list" class="roulette-levels-list"></div>
         </div>
     </section>
 </body>
