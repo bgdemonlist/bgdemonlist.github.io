@@ -6,7 +6,6 @@ import {
 	signOut,
 } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
 import { getDatabase } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
-import { getStorage } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-storage.js';
 
 const firebaseConfig = {
 	apiKey: 'AIzaSyBR-ImRkDyL_K3mwur6en4sXjj2WB9a-cs',
@@ -23,7 +22,6 @@ const app = initializeApp(firebaseConfig);
 
 export const db = getDatabase(app);
 export const auth = getAuth(app);
-export const storage = getStorage(app);
 
 // Configurable multiplier for pack completion bonus points (0.10 = 10% of sum of level points)
 export const PACK_BONUS_MULTIPLIER = 0.10;
@@ -74,6 +72,46 @@ export function getYouTubeThumbnail(url, quality = 'mqdefault') {
 	return videoId
 		? `https://img.youtube.com/vi/${videoId}/${quality}.jpg`
 		: '';
+}
+
+// Ordered from best to worst. maxresdefault/sddefault only exist for some videos;
+// hqdefault and mqdefault are always generated.
+const THUMBNAIL_FALLBACKS = ['maxresdefault', 'sddefault', 'hqdefault', 'mqdefault'];
+
+// When a thumbnail quality doesn't exist, YouTube responds with a 120x90 grey
+// placeholder (often without triggering `error`), so we check the size as well.
+const YOUTUBE_PLACEHOLDER_WIDTH = 120;
+
+export function setYouTubeThumbnail(img, url, qualities = THUMBNAIL_FALLBACKS) {
+	const videoId = getYouTubeVideoId(url);
+	if (!img || !videoId) {
+		return;
+	}
+
+	let index = 0;
+
+	const tryNext = () => {
+		index += 1;
+		if (index < qualities.length) {
+			img.src = `https://img.youtube.com/vi/${videoId}/${qualities[index]}.jpg`;
+		} else {
+			img.removeEventListener('load', handleLoad);
+			img.removeEventListener('error', tryNext);
+		}
+	};
+
+	const handleLoad = () => {
+		if (img.naturalWidth === YOUTUBE_PLACEHOLDER_WIDTH && index < qualities.length - 1) {
+			tryNext();
+			return;
+		}
+		img.removeEventListener('load', handleLoad);
+		img.removeEventListener('error', tryNext);
+	};
+
+	img.addEventListener('load', handleLoad);
+	img.addEventListener('error', tryNext);
+	img.src = `https://img.youtube.com/vi/${videoId}/${qualities[0]}.jpg`;
 }
 
 export function openExternal(url) {

@@ -4,7 +4,6 @@ import {
 	orderByChild,
 	query,
 	ref,
-	set,
 	update,
 } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
 import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
@@ -34,21 +33,54 @@ const removePopupExit = byId('remove-popup-close');
 const removePopupInput = byId('remove-popup-input');
 const removePopupCookiesDiv = byId('remove-popup-cookies-div');
 
+const LEVELS_CACHE_KEY = 'bdl-levels-cache-v1';
+
 let levelsList = [];
+let renderedSignature = '';
+let hasLiveData = false;
 let isAdminLoggedIn = false;
 
 initAuthNavigation();
 
 onAuthStateChanged(auth, (user) => {
-	isAdminLoggedIn = Boolean(user);
+	const isAdmin = Boolean(user);
 	if (addRemoveDiv) {
-		addRemoveDiv.style.display = isAdminLoggedIn ? 'flex' : 'none';
+		addRemoveDiv.style.display = isAdmin ? 'flex' : 'none';
 	}
+	if (isAdmin === isAdminLoggedIn) {
+		// Nothing changed (e.g. logged-out visitor on first load), so skip rebuilding the list.
+		return;
+	}
+	isAdminLoggedIn = isAdmin;
 	// Re-render list with or without admin controls when auth state changes
 	if (levelsList.length > 0) {
 		renderLevels(levelsList);
 	}
 });
+
+// Only the fields needed to draw the list are cached (records are left out).
+function toCacheEntry({ name, creator, video, pos }) {
+	return { name, creator, video, pos };
+}
+
+function readCachedLevels() {
+	try {
+		const parsed = JSON.parse(localStorage.getItem(LEVELS_CACHE_KEY));
+		return Array.isArray(parsed)
+			? parsed.filter((level) => level?.name && typeof level.pos === 'number')
+			: [];
+	} catch {
+		return [];
+	}
+}
+
+function writeCachedLevels(serialized) {
+	try {
+		localStorage.setItem(LEVELS_CACHE_KEY, serialized);
+	} catch {
+		// Ignore unavailable storage in private browsing contexts.
+	}
+}
 
 function closePopups() {
 	if (blackScreen) blackScreen.style.display = 'none';
@@ -63,7 +95,12 @@ function createLevelCard(level, totalLevels) {
 
 	const levelImage = document.createElement('img');
 	levelImage.className = 'level-img';
-	levelImage.src = getYouTubeThumbnail(level.video, 'maxresdefault');
+	// `loading` must be set before `src`, otherwise the browser starts the download immediately.
+	levelImage.loading = 'lazy';
+	levelImage.decoding = 'async';
+	levelImage.width = 320;
+	levelImage.height = 180;
+	levelImage.src = getYouTubeThumbnail(level.video, 'hqdefault');
 	levelImage.alt = `${level.name} thumbnail`;
 	levelImage.addEventListener('click', () => openExternal(level.video));
 	levelContainer.append(levelImage);
@@ -135,6 +172,11 @@ function filterLevels(searchValue) {
 }
 
 async function moveLevel(level, direction) {
+	if (!hasLiveData) {
+		// The list may still be showing cached data; wait for the live data before reordering.
+		return;
+	}
+
 	const currentIndex = levelsList.findIndex(
 		(candidate) => candidate.name === level.name,
 	);
@@ -144,16 +186,10 @@ async function moveLevel(level, direction) {
 		return;
 	}
 
-	await Promise.all([
-		set(ref(db, `levels/${normalizeKey(level.name)}`), {
-			...level,
-			pos: level.pos + direction,
-		}),
-		set(ref(db, `levels/${normalizeKey(other.name)}`), {
-			...other,
-			pos: level.pos,
-		}),
-	]);
+	await update(ref(db), {
+		[`levels/${normalizeKey(level.name)}/pos`]: level.pos + direction,
+		[`levels/${normalizeKey(other.name)}/pos`]: level.pos,
+	});
 }
 
 function renderLevels(orderedLevels) {
@@ -177,15 +213,33 @@ function renderLevels(orderedLevels) {
 	filterLevels(levelSearch?.value ?? '');
 }
 
+// Show the last known list instantly while the live data loads.
+const cachedLevels = readCachedLevels();
+if (cachedLevels.length > 0) {
+	levelsList = cachedLevels;
+	renderedSignature = JSON.stringify(cachedLevels.map(toCacheEntry));
+	renderLevels(levelsList);
+}
+
 onValue(query(ref(db, 'levels'), orderByChild('pos')), (snapshot) => {
-	levelsList = [];
+	const freshLevels = [];
 	snapshot.forEach((child) => {
 		const level = child.val();
 		if (level?.name && typeof level.pos === 'number') {
-			levelsList.push(level);
+			freshLevels.push(level);
 		}
 	});
 
+	hasLiveData = true;
+	const signature = JSON.stringify(freshLevels.map(toCacheEntry));
+	if (signature === renderedSignature) {
+		// Same list as already shown (e.g. matches the cache, or only records changed).
+		return;
+	}
+
+	levelsList = freshLevels;
+	renderedSignature = signature;
+	writeCachedLevels(signature);
 	renderLevels(levelsList);
 });
 

@@ -11,6 +11,7 @@ import {
 	initAuthNavigation,
 	openExternal,
 	setText,
+	setYouTubeThumbnail,
 } from './app-common.js';
 
 const startScreen = byId('start-screen');
@@ -79,7 +80,7 @@ function renderCard(level) {
 
 	const image = document.createElement('img');
 	image.className = 'level-img';
-	image.src = getYouTubeThumbnail(level.video, 'maxresdefault') || getYouTubeThumbnail(level.video);
+	setYouTubeThumbnail(image, level.video);
 	image.alt = `${level.name} thumbnail`;
 	image.title = 'Watch completion video';
 	image.addEventListener('click', () => openExternal(level.video));

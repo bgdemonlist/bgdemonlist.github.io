@@ -1,4 +1,5 @@
 import {
+	equalTo,
 	get,
 	orderByChild,
 	query,
@@ -15,6 +16,7 @@ import {
 	initAuthNavigation,
 	normalizeKey,
 	setText,
+	setYouTubeThumbnail,
 } from './app-common.js';
 
 const levelName = byId('levelName');
@@ -273,6 +275,51 @@ function renderVictors(records) {
 	});
 }
 
+// Shows a thumbnail with a play button and only loads the (heavy) YouTube player on click.
+function renderVideoFacade(container, videoId, title) {
+	if (!container || container.dataset.videoId === (videoId ?? '')) {
+		return;
+	}
+
+	container.dataset.videoId = videoId ?? '';
+	container.replaceChildren();
+	if (!videoId) {
+		return;
+	}
+
+	const button = document.createElement('button');
+	button.type = 'button';
+	button.className = 'video-facade-btn';
+	button.setAttribute('aria-label', `Play video: ${title}`);
+
+	const thumbnail = document.createElement('img');
+	thumbnail.alt = '';
+	thumbnail.decoding = 'async';
+	setYouTubeThumbnail(thumbnail, `https://youtu.be/${videoId}`);
+
+	const playIcon = document.createElement('span');
+	playIcon.className = 'video-facade-play';
+	playIcon.setAttribute('aria-hidden', 'true');
+	playIcon.innerHTML = '<i class="fa-solid fa-play"></i>';
+
+	button.append(thumbnail, playIcon);
+	button.addEventListener(
+		'click',
+		() => {
+			const iframe = document.createElement('iframe');
+			iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+			iframe.title = title;
+			iframe.allow =
+				'accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share';
+			iframe.allowFullscreen = true;
+			container.replaceChildren(iframe);
+		},
+		{ once: true },
+	);
+
+	container.append(button);
+}
+
 async function loadLevel() {
 	const position = Number(new URL(document.location).searchParams.get('pos'));
 	if (!position) {
@@ -284,22 +331,22 @@ async function loadLevel() {
 		return;
 	}
 
-	const levelsSnapshot = await get(ref(db, 'levels'));
-	if (!levelsSnapshot.exists()) {
-		currentLevel = null;
-		currentRecords = [];
-		setText(levelName, 'Level not found');
-		setText(levelCreator, 'No levels are available right now.');
-		renderVictors([]);
-		return;
-	}
+	// Only download the requested level (its records are nested inside it).
+	// Requires `".indexOn": ["pos"]` on `levels` in the database rules to be filtered server-side.
+	const levelSnapshot = await get(
+		query(ref(db, 'levels'), orderByChild('pos'), equalTo(position)),
+	);
 
 	let selectedLevel = null;
-	levelsSnapshot.forEach((child) => {
+	let recordsSnapshot = null;
+	levelSnapshot.forEach((child) => {
 		const level = child.val();
 		if (level?.pos === position) {
 			selectedLevel = level;
+			recordsSnapshot = child.child('records');
+			return true;
 		}
+		return false;
 	});
 
 	if (!selectedLevel) {
@@ -316,27 +363,19 @@ async function loadLevel() {
 	setText(levelCreator, `By ${selectedLevel.creator ?? 'Unknown creator'}`);
 	document.title = `#${position} - ${selectedLevel.name}`;
 
-	const videoId = getYouTubeVideoId(selectedLevel.video);
-	if (levelVideo) {
-		levelVideo.src = videoId
-			? `https://www.youtube.com/embed/${videoId}`
-			: '';
-		levelVideo.title = selectedLevel.name ?? 'Level video';
-	}
+	renderVideoFacade(
+		levelVideo,
+		getYouTubeVideoId(selectedLevel.video),
+		selectedLevel.name ?? 'Level video',
+	);
 
 	setText(score, calculatePoints(position).toFixed(2));
 
-	const [recordsSnapshot, usersSnapshot] = await Promise.all([
-		get(
-			query(
-				ref(db, `levels/${normalizeKey(selectedLevel.name)}/records`),
-				orderByChild('recordNum'),
-			),
-		),
-		get(ref(db, 'users')),
-	]);
-	const userKeyLookup = buildUserKeyLookup(usersSnapshot);
-	currentRecords = extractRecords(recordsSnapshot, userKeyLookup);
+	// Records are nested in key order, so sort them by recordNum (records without one go first,
+	// matching the previous orderByChild('recordNum') behaviour).
+	currentRecords = extractRecords(recordsSnapshot, null).sort(
+		(a, b) => (a.recordNum ?? -1) - (b.recordNum ?? -1),
+	);
 
 	setText(victorCount, `${currentRecords.length} victors`);
 	renderVictors(currentRecords);

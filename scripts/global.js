@@ -1,4 +1,6 @@
-import { byId } from './app-common.js';
+// Intentionally has no imports: importing app-common.js would make this script wait for the
+// whole Firebase SDK to download before applying the theme and translations.
+const byId = (id) => document.getElementById(id);
 
 const THEME_KEY = 'bdl-theme';
 const LANGUAGE_KEY = 'bdl-language';
@@ -27,6 +29,8 @@ const TRANSLATIONS = {
 				'Рекорди с clickbot-ове или click sound mod-ове няма да бъдат приемани.',
 			'For solo 2-player completions, handcam footage is required.':
 				'За solo 2-player completion-и е нужен handcam.',
+			'Completions with AI-generated thumbnails on the completion video will not be accepted.':
+				'Completion-и с AI-генериран thumbnail на видеото няма да бъдат приемани.',
 			'Gameplay': 'Позволен gameplay',
 			'Allowed hacks match':
 				'Позволените хакове са същите като тези в правилата на',
@@ -62,8 +66,8 @@ const TRANSLATIONS = {
 			"After another player beats the nerfed version, the level may be moved based on that player's opinion.":
 				'След като друг играч мине nerfed версията, нивото може да бъде преместено според неговото мнение.',
 			'Effective Date': 'Дата на влизане в сила',
-			'These rules apply from May 23, 2026 onward. Older records may be handled case by case. If you disagree with a decision or need a clarification, use the discussion channel in discord.':
-				'Тези правила важат от 23 май 2026 г. нататък. По-старите рекорди може да се разглеждат индивидуално. Ако не сте съгласни с решение или имате нужда от уточнение, използвайте discussion канала в Discord.',
+			'These rules apply from October 12, 2026 onward. Older records may be handled case by case. If you disagree with a decision or need a clarification, use the discussion channel in discord.':
+				'Тези правила важат от 12 октомври 2026 г. нататък. По-старите рекорди може да се разглеждат индивидуално. Ако не сте съгласни с решение или имате нужда от уточнение, използвайте discussion канала в Discord.',
 			'Rank:': 'Ранг:',
 			'Completions:': 'Completion-и:',
 			'Hardest Demon:': 'Най-труден Demon:',
@@ -219,6 +223,7 @@ if (logo) {
 setupThemeToggle();
 setupLanguageToggle();
 translatePage();
+delete document.documentElement.dataset.i18nPending;
 highlightActiveNavigation();
 watchNavigationChanges();
 watchPageTranslations();

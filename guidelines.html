@@ -5,6 +5,23 @@
 		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 		<title>Guidelines</title>
+		<script>
+			// Apply the saved theme/language before the first paint to avoid a flash (global.js handles the rest).
+			(function () {
+				var root = document.documentElement;
+				try {
+					var theme = localStorage.getItem('bdl-theme');
+					root.dataset.theme = theme === 'light' || theme === 'dark' ? theme
+						: matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+					if (localStorage.getItem('bdl-language') === 'bg') {
+						root.lang = 'bg';
+						root.dataset.language = 'bg';
+						root.dataset.i18nPending = '';
+						setTimeout(function () { delete root.dataset.i18nPending; }, 1500);
+					}
+				} catch (e) {}
+			})();
+		</script>
 		<link rel="stylesheet" href="css/guidelines.css" />
 		<link rel="stylesheet" href="css/global.css" />
 		<script src="scripts/global.js" type="module"></script>
@@ -46,6 +63,7 @@
 						<li>The video must include clicks, or raw footage with clicks must be provided.</li>
 						<li>Records using clickbots or click sound mods will not be accepted.</li>
 						<li>For solo 2-player completions, handcam footage is required.</li>
+						<li>Completions with AI-generated thumbnails on the completion video will not be accepted.</li>
 					</ul>
 				</article>
 
@@ -111,7 +129,7 @@
 						<h2>Effective Date</h2>
 					</div>
 					<p>
-						These rules apply from May 23, 2026 onward. Older records may be
+						These rules apply from October 12, 2026 onward. Older records may be
 						handled case by case. If you disagree with a decision or need a
 						clarification, use the discussion channel in discord.
 					</p>
