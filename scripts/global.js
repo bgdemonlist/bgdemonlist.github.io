@@ -16,58 +16,6 @@ const TRANSLATIONS = {
 			Guidelines: 'Правила',
 			'BG Demon Roulette': 'BG Demon Рулетка',
 			'BG Demon List': 'BG Demon List',
-			'These are the official BG Demon List rules for submitting records, placing levels, and handling difficulty changes.':
-				'Това са официалните правила на BG Demon List за добавяне на рекорди, поставяне на нива и промени в трудността.',
-			'Submission Rules': 'Правила за добавяне на рекорди',
-			'Video evidence is required for completions.':
-				'За completion-и е нужно видео доказателство.',
-			'Rare exceptions can be made for old completions if the player is trusted enough.':
-				'В редки случаи може да има изключения за стари completion-и, ако играчът е достатъчно trusted.',
-			'The video must include clicks, or raw footage with clicks must be provided.':
-				'Видеото трябва да има кликове или да бъде предоставен raw footage с кликове.',
-			'Records using clickbots or click sound mods will not be accepted.':
-				'Рекорди с clickbot-ове или click sound mod-ове няма да бъдат приемани.',
-			'For solo 2-player completions, handcam footage is required.':
-				'За solo 2-player completion-и е нужен handcam.',
-			'Completions with AI-generated thumbnails on the completion video will not be accepted.':
-				'Completion-и с AI-генериран thumbnail на видеото няма да бъдат приемани.',
-			'Gameplay': 'Позволен gameplay',
-			'Allowed hacks match':
-				'Позволените хакове са същите като тези в правилата на',
-			Pointercrate: 'Pointercrate',
-			"'s rules.": '.',
-			"Allowed hacks match Pointercrate's rules.":
-				'Позволените hacks са същите като тези в правилата на Pointercrate.',
-			'If you are unsure whether something is allowed, ask a list admin.':
-				'Ако не сте сигурни дали нещо е позволено, попитайте list admin.',
-			'The level must be played on the official copy, not on a personal copy.':
-				'Нивото трябва да се играе на официалното копие, а не на лично копие.',
-			'Built-in LDMs are allowed.': 'Вградените LDM-и са позволени.',
-			'External LDMs or ULDMs must be approved if they remove too much from the level.':
-				'External LDM-и или ULDM-и трябва да бъдат одобрени, ако махат твърде много от нивото.',
-			'Level Placement': 'Поставяне на нива',
-			'Any rated Extreme Demon legitimately completed by a Bulgarian player can be placed on the list.':
-				'Всяко rated Extreme Demon ниво, минато legitimately от български играч, може да бъде поставено на листа.',
-			'Challenge levels will not be placed.':
-				'Challenge нива няма да бъдат поставяни.',
-			'Unrated levels can be placed, but they are handled more subjectively and may require a vote.':
-				'Unrated нива могат да бъдат поставени, но се разглеждат по-субективно и може да изискват гласуване.',
-			'Low-quality levels may be rejected even if they otherwise qualify.':
-				'Нива с много ниско качество може да бъдат отказани, дори ако иначе отговарят на условията.',
-			'Difficulty Changes': 'Промени в позицията',
-			'Victor opinions have priority when they are reliable and based on nearby completions.':
-				'Мненията на victor-и имат приоритет, когато са надеждни и базирани на близки completion-и.',
-			'If victors disagree, the list placement and the number of trusted opinions are used to decide the change.':
-				'Ако victor-ите не са съгласни, позицията в листа и броят trusted мнения се използват за решението.',
-			'If a victor has not beaten anything around the level, placement may follow Pointercrate or AREDL until better opinions appear.':
-				'Ако victor не е минал нищо около нивото, placement-ът може да следва Pointercrate или AREDL, докато се появят по-надеждни мнения.',
-			'If a level has only one victor and later receives a nerfdate, its placement does not change immediately.':
-				'Ако ниво има само един victor и по-късно получи nerfdate, placement-ът му не се променя веднага.',
-			"After another player beats the nerfed version, the level may be moved based on that player's opinion.":
-				'След като друг играч мине nerfed версията, нивото може да бъде преместено според неговото мнение.',
-			'Effective Date': 'Дата на влизане в сила',
-			'These rules apply from October 12, 2026 onward. Older records may be handled case by case. If you disagree with a decision or need a clarification, use the discussion channel in discord.':
-				'Тези правила важат от 12 октомври 2026 г. нататък. По-старите рекорди може да се разглеждат индивидуално. Ако не сте съгласни с решение или имате нужда от уточнение, използвайте discussion канала в Discord.',
 			'Rank:': 'Ранг:',
 			'Completions:': 'Completion-и:',
 			'Hardest Demon:': 'Най-труден Demon:',
@@ -168,26 +116,10 @@ const TRANSLATIONS = {
 			'Password': 'Парола',
 			'Login': 'Вход',
 			'Edit': 'Редактирай',
-			'Beaten by 1 player in this province:': 'Минато от 1 играч в тази област:',
-			'Beaten by 2 players in this province:': 'Минато от 2 играчи в тази област:',
-			'Beaten by 3 players in this province:': 'Минато от 3 играчи в тази област:',
-			'Beaten by 4 players in this province:': 'Минато от 4 играчи в тази област:',
-			'Beaten by 5 players in this province:': 'Минато от 5 играчи в тази област:',
-			'Beaten by 6 players in this province:': 'Минато от 6 играчи в тази област:',
-			'Beaten by 7 players in this province:': 'Минато от 7 играчи в тази област:',
-			'Beaten by 8 players in this province:': 'Минато от 8 играчи в тази област:',
-			'Beaten by 9 players in this province:': 'Минато от 9 играчи в тази област:',
-			'Beaten by 10 players in this province:': 'Минато от 10 играчи в тази област:',
-			'Beaten by 11 players in this province:': 'Минато от 11 играчи в тази област:',
-			'Beaten by 12 players in this province:': 'Минато от 12 играчи в тази област:',
-			'Beaten by 13 players in this province:': 'Минато от 13 играчи в тази област:',
-			'Beaten by 14 players in this province:': 'Минато от 14 играчи в тази област:',
-			'Beaten by 15 players in this province:': 'Минато от 15 играчи в тази област:',
-			'Beaten by 16 players in this province:': 'Минато от 16 играчи в тази област:',
-			'Beaten by 17 players in this province:': 'Минато от 17 играчи в тази област:',
-			'Beaten by 18 players in this province:': 'Минато от 18 играчи в тази област:',
-			'Beaten by 19 players in this province:': 'Минато от 19 играчи в тази област:',
-			'Beaten by 20 players in this province:': 'Минато от 20 играчи в тази област:',
+			'Edit Guidelines': 'Редактирай правилата',
+			'Write': 'Редакция',
+			'Preview': 'Преглед',
+			'Saving...': 'Запазване...',
 		},
 		placeholder: {
 			'Search...': 'Търсене...',
@@ -223,7 +155,9 @@ if (logo) {
 setupThemeToggle();
 setupLanguageToggle();
 translatePage();
-delete document.documentElement.dataset.i18nPending;
+if (!byId('guidelines-container')) {
+	delete document.documentElement.dataset.i18nPending;
+}
 highlightActiveNavigation();
 watchNavigationChanges();
 watchPageTranslations();
@@ -397,8 +331,22 @@ function normalizeText(value) {
 	return String(value || '').replace(/\s+/g, ' ').trim();
 }
 
+function getBgTextTranslation(key) {
+	if (TRANSLATIONS.bg.text[key]) {
+		return TRANSLATIONS.bg.text[key];
+	}
+
+	const provinceMatch = key.match(/^Beaten by (\d+) players? in this province:$/);
+	if (provinceMatch) {
+		const count = Number(provinceMatch[1]);
+		return `Минато от ${count} ${count === 1 ? 'играч' : 'играчи'} в тази област:`;
+	}
+
+	return key;
+}
+
 function translateTextElement(element) {
-	if (!element || element.closest('#theme-toggle, #language-toggle')) {
+	if (!element || element.closest('#theme-toggle, #language-toggle, [data-i18n-ignore]')) {
 		return;
 	}
 
@@ -422,7 +370,7 @@ function translateTextElement(element) {
 		const original = originalTextNodes.get(node);
 		const translated =
 			currentLanguage === 'bg'
-				? TRANSLATIONS.bg.text[original.key] || original.key
+				? getBgTextTranslation(original.key)
 				: original.raw;
 		const suffix = /\s$/.test(original.raw) && currentLanguage === 'bg' ? ' ' : '';
 		const value = currentLanguage === 'bg' ? translated + suffix : translated;

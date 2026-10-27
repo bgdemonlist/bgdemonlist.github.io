@@ -22,9 +22,16 @@
 				} catch (e) {}
 			})();
 		</script>
+		<link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+		<link rel="preconnect" href="https://bulgarian-demonlist-default-rtdb.europe-west1.firebasedatabase.app" />
+		<link rel="modulepreload" href="scripts/app-common.js" />
+		<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js" />
+		<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js" />
+		<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js" />
 		<link rel="stylesheet" href="css/guidelines.css" />
 		<link rel="stylesheet" href="css/global.css" />
 		<script src="scripts/global.js" type="module"></script>
+		<script src="scripts/guidelines.js" type="module"></script>
 		<script src="https://kit.fontawesome.com/811caf8c84.js" crossorigin="anonymous"></script>
 	</head>
 	<body>
@@ -41,12 +48,26 @@
 
 		<main id="guidelines-container">
 			<section id="guidelines-hero">
-				<p class="eyebrow">BG Demon List</p>
-				<h1>Guidelines</h1>
-				<p>
-					These are the official BG Demon List rules for submitting records,
-					placing levels, and handling difficulty changes.
-				</p>
+				<div class="guidelines-hero-top">
+					<p class="eyebrow">BG Demon List</p>
+					<button
+						id="edit-guidelines-btn"
+						type="button"
+						class="hide"
+						aria-label="Edit Guidelines"
+						title="Edit Guidelines"
+					>
+						<i class="fa-solid fa-pen" aria-hidden="true"></i>
+						<span>Edit</span>
+					</button>
+				</div>
+				<div id="guidelines-hero-content">
+					<h1>Guidelines</h1>
+					<p>
+						These are the official BG Demon List rules for submitting records,
+						placing levels, and handling difficulty changes.
+					</p>
+				</div>
 			</section>
 
 			<section id="guidelines-sheet" aria-label="Guidelines sections">
@@ -136,5 +157,103 @@
 				</article>
 			</section>
 		</main>
+
+		<div
+			id="edit-guidelines-overlay"
+			class="hide"
+			role="dialog"
+			aria-modal="true"
+			aria-labelledby="edit-guidelines-title"
+		>
+			<div id="edit-guidelines-modal">
+				<div id="edit-guidelines-top">
+					<h2 id="edit-guidelines-title">
+						<i class="fa-solid fa-pen-to-square" aria-hidden="true"></i>
+						<span>Edit Guidelines</span>
+					</h2>
+					<button id="edit-guidelines-close" type="button" aria-label="Close">
+						<i class="fa-solid fa-xmark" aria-hidden="true"></i>
+					</button>
+				</div>
+
+				<div id="edit-guidelines-toolbar">
+					<div
+						class="guidelines-file-tabs"
+						role="tablist"
+						aria-label="Guideline language files"
+						data-i18n-ignore
+					>
+						<button
+							type="button"
+							class="guidelines-file-tab active"
+							data-lang="en"
+						>
+							<i class="fa-regular fa-file-lines" aria-hidden="true"></i>
+							guidelines-en.md
+						</button>
+						<button
+							type="button"
+							class="guidelines-file-tab"
+							data-lang="bg"
+						>
+							<i class="fa-regular fa-file-lines" aria-hidden="true"></i>
+							guidelines-bg.md
+						</button>
+					</div>
+
+					<div class="guidelines-mode-tabs">
+						<button
+							type="button"
+							id="guidelines-tab-write"
+							class="guidelines-mode-tab active"
+						>
+							<i class="fa-solid fa-code" aria-hidden="true"></i>
+							<span>Write</span>
+						</button>
+						<button
+							type="button"
+							id="guidelines-tab-preview"
+							class="guidelines-mode-tab"
+						>
+							<i class="fa-solid fa-eye" aria-hidden="true"></i>
+							<span>Preview</span>
+						</button>
+					</div>
+				</div>
+
+				<div id="guidelines-syntax-help" data-i18n-ignore>
+					<span><code># Title</code> Hero heading</span>
+					<span><code>## [fa-trophy] Section</code> Section + icon</span>
+					<span><code>- item</code> Bullet</span>
+					<span><code>[text](url)</code> Link</span>
+					<span><code>**bold**</code> Bold</span>
+				</div>
+
+				<form id="edit-guidelines-form">
+					<div id="guidelines-editor-pane" data-i18n-ignore>
+						<textarea
+							id="guidelines-markdown-input"
+							rows="18"
+							spellcheck="false"
+							aria-label="Guidelines Markdown"
+						></textarea>
+					</div>
+
+					<div id="guidelines-preview-pane" class="hide" data-i18n-ignore>
+						<div id="guidelines-preview-hero" class="preview-hero-box"></div>
+						<div id="guidelines-preview-sheet" class="preview-sheet-box"></div>
+					</div>
+
+					<p id="edit-guidelines-error" class="hide" data-i18n-ignore></p>
+
+					<div id="edit-guidelines-actions">
+						<div class="edit-guidelines-actions-right">
+							<button id="edit-guidelines-cancel" type="button">Cancel</button>
+							<button id="edit-guidelines-save" type="submit">Save</button>
+						</div>
+					</div>
+				</form>
+			</div>
+		</div>
 	</body>
 </html>
