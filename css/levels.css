@@ -570,6 +570,26 @@
 		padding: 20px 16px;
 	}
 
+	#level-header {
+		gap: 10px;
+	}
+
+	.level-nav-arrow {
+		width: 32px;
+		height: 32px;
+		font-size: 1.2rem;
+		flex-shrink: 0;
+	}
+
+	.titles {
+		font-size: clamp(1.35rem, 5.5vw, 1.85rem);
+		word-break: break-word;
+	}
+
+	#level-records-panel .titles {
+		font-size: clamp(1.3rem, 5vw, 1.65rem);
+	}
+
 	#levelCreator,
 	#level-score-box,
 	#level-records-panel .titles {
@@ -595,5 +615,11 @@
 	#add-popup,
 	#edit-popup {
 		padding: 18px;
+	}
+
+	#add-popup-bottom input:not([type='checkbox']),
+	#edit-popup-bottom input,
+	#edit-popup-bottom select {
+		font-size: 1rem;
 	}
 }

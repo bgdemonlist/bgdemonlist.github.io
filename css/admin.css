@@ -125,6 +125,14 @@
 		grid-template-columns: 1fr;
 		gap: 0;
 	}
+
+	.form-group input[type='text'],
+	.form-group input[type='email'],
+	.form-group input[type='password'],
+	.form-group input[type='number'],
+	.form-group select {
+		font-size: 1rem;
+	}
 }
 
 .form-group input[type='text'],

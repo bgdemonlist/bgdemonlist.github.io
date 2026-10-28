@@ -131,6 +131,12 @@ const TRANSLATIONS = {
 			'Write': 'Редакция',
 			'Preview': 'Преглед',
 			'Saving...': 'Запазване...',
+			'Demon List': 'Демон Лист',
+			'Bulgarian Extreme Demon List': 'Български Extreme Demon Лист',
+			'Not affiliated with RobTop Games.': 'Не е свързан с RobTop Games.',
+			'© 2026 BG Demon List. All rights reserved.':
+				'© 2026 BG Demon List. Всички права запазени.',
+			'Back to top': 'Нагоре',
 		},
 		placeholder: {
 			'Search...': 'Търсене...',
@@ -165,6 +171,8 @@ if (logo) {
 
 setupThemeToggle();
 setupLanguageToggle();
+setupMobileNav();
+setupFooter();
 translatePage();
 if (!byId('guidelines-container')) {
 	delete document.documentElement.dataset.i18nPending;
@@ -338,6 +346,115 @@ function renderThemeToggle(button) {
 	button.title = `Switch to ${formatThemeLabel(nextTheme)} theme`;
 }
 
+function setupMobileNav() {
+	const header = document.querySelector('header');
+	const nav = header?.querySelector('nav');
+	if (!header || !nav) {
+		return;
+	}
+
+	let actions = header.querySelector('.header-actions');
+	if (!actions) {
+		actions = document.createElement('div');
+		actions.className = 'header-actions';
+		header.append(actions);
+	}
+
+	let toggle = byId('nav-toggle');
+	if (!toggle) {
+		toggle = document.createElement('button');
+		toggle.id = 'nav-toggle';
+		toggle.type = 'button';
+		toggle.setAttribute('aria-controls', 'nav_links');
+		actions.append(toggle);
+	}
+
+	const setNavOpen = (isOpen) => {
+		header.classList.toggle('nav-open', isOpen);
+		toggle.setAttribute('aria-expanded', String(isOpen));
+		toggle.setAttribute(
+			'aria-label',
+			isOpen ? 'Close navigation menu' : 'Open navigation menu',
+		);
+		toggle.title = isOpen ? 'Close menu' : 'Menu';
+		toggle.innerHTML = `<i class="fa-solid ${isOpen ? 'fa-xmark' : 'fa-bars'}" aria-hidden="true"></i>`;
+	};
+
+	setNavOpen(false);
+
+	toggle.addEventListener('click', (event) => {
+		event.stopPropagation();
+		const isOpen = !header.classList.contains('nav-open');
+		setNavOpen(isOpen);
+	});
+
+	nav.addEventListener('click', (event) => {
+		if (event.target.closest('a')) {
+			setNavOpen(false);
+		}
+	});
+
+	document.addEventListener('click', (event) => {
+		if (header.classList.contains('nav-open') && !header.contains(event.target)) {
+			setNavOpen(false);
+		}
+	});
+
+	document.addEventListener('keydown', (event) => {
+		if (event.key === 'Escape' && header.classList.contains('nav-open')) {
+			setNavOpen(false);
+			toggle.focus();
+		}
+	});
+
+	window.addEventListener('resize', () => {
+		if (window.innerWidth > 860 && header.classList.contains('nav-open')) {
+			setNavOpen(false);
+		}
+	});
+}
+
+function setupFooter() {
+	let footer = byId('site-footer');
+	if (!footer) {
+		footer = document.createElement('footer');
+		footer.id = 'site-footer';
+		footer.innerHTML = `
+			<div class="footer-inner">
+				<div class="footer-top">
+					<div class="footer-brand">
+						<a href="index.html" class="footer-logo" data-i18n-ignore>BGDL</a>
+						<p class="footer-tagline">Bulgarian Demon List</p>
+					</div>
+					<ul class="footer-links">
+						<li><a href="index.html">Demon List</a></li>
+						<li><a href="roulette.html">Roulette</a></li>
+						<li><a href="leaderboard.html">Leaderboard</a></li>
+						<li><a href="guidelines.html">Guidelines</a></li>
+					</ul>
+				</div>
+				<div class="footer-bottom">
+					<div class="footer-meta">
+						<span>© 2026 BG Demon List. All rights reserved.</span>
+						<span class="footer-dot" aria-hidden="true">•</span>
+						<span>Not affiliated with RobTop Games.</span>
+					</div>
+					<button id="back-to-top" type="button">
+						<i class="fa-solid fa-arrow-up" aria-hidden="true"></i>
+						<span>Back to top</span>
+					</button>
+				</div>
+			</div>
+		`;
+		document.body.append(footer);
+	}
+
+	const backToTopBtn = byId('back-to-top');
+	backToTopBtn?.addEventListener('click', () => {
+		window.scrollTo({ top: 0, behavior: 'smooth' });
+	});
+}
+
 function normalizeText(value) {
 	return String(value || '').replace(/\s+/g, ' ').trim();
 }
@@ -368,7 +485,7 @@ function getBgTextTranslation(key) {
 }
 
 function translateTextElement(element) {
-	if (!element || element.closest('#theme-toggle, #language-toggle, [data-i18n-ignore]')) {
+	if (!element || element.closest('#theme-toggle, #language-toggle, #nav-toggle, [data-i18n-ignore]')) {
 		return;
 	}
 

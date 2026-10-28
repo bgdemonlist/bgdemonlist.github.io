@@ -288,6 +288,25 @@ function renderCompletions(records, isProvince = false) {
 
 			tooltip.append(header, victorsDiv);
 			item.append(tooltip);
+
+			const updateTooltipPosition = () => {
+				tooltip.style.setProperty('--tooltip-shift', '0px');
+				const rect = tooltip.getBoundingClientRect();
+				const margin = 10;
+				let shift = 0;
+				if (rect.left < margin) {
+					shift = margin - rect.left;
+				} else if (rect.right > window.innerWidth - margin) {
+					shift = window.innerWidth - margin - rect.right;
+				}
+				if (shift !== 0) {
+					tooltip.style.setProperty('--tooltip-shift', `${Math.round(shift)}px`);
+				}
+			};
+
+			item.addEventListener('mouseenter', updateTooltipPosition);
+			item.addEventListener('focusin', updateTooltipPosition);
+			item.addEventListener('touchstart', updateTooltipPosition, { passive: true });
 		}
 
 		completionsList.append(item);
@@ -430,14 +449,22 @@ async function renderSelectedPlayer(index) {
 	updatePlayerNameEditability();
 }
 
+function scrollUserStatsIntoViewOnMobile() {
+	if (window.innerWidth <= 760) {
+		byId('userStats')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+	}
+}
+
 function createPlayerListItem(player, displayRank) {
 	const row = document.createElement('div');
 	row.className =
 		displayRank % 2 === 0 ? 'player-container-2' : 'player-container-1';
 	row.addEventListener('click', () => {
-		renderSelectedPlayer(playerList.indexOf(player)).catch((error) => {
-			console.error('Failed to render player details.', error);
-		});
+		renderSelectedPlayer(playerList.indexOf(player))
+			.then(() => scrollUserStatsIntoViewOnMobile())
+			.catch((error) => {
+				console.error('Failed to render player details.', error);
+			});
 	});
 
 	const provinceImage = document.createElement('img');
@@ -681,6 +708,7 @@ function createProvinceListItem(province, displayRank) {
 		displayRank % 2 === 0 ? 'province-container-2' : 'province-container-1';
 	row.addEventListener('click', () => {
 		renderSelectedProvince(provinceList.indexOf(province));
+		scrollUserStatsIntoViewOnMobile();
 	});
 
 	const provinceImage = document.createElement('img');
@@ -810,7 +838,7 @@ function renderSelectedProvince(index) {
 				switchMode('players');
 				const pIdx = playerList.indexOf(player);
 				if (pIdx >= 0) {
-					renderSelectedPlayer(pIdx);
+					renderSelectedPlayer(pIdx).then(() => scrollUserStatsIntoViewOnMobile());
 				}
 			});
 
@@ -1423,10 +1451,12 @@ loadData()
 		const initialIndex = matchedIndex >= 0 ? matchedIndex : 0;
 		if (matchedIndex >= 0 && playerList[matchedIndex]?.element) {
 			setTimeout(() => {
-				playerList[matchedIndex].element.scrollIntoView({
-					behavior: 'smooth',
-					block: 'center',
-				});
+				if (window.innerWidth <= 760) {
+					scrollUserStatsIntoViewOnMobile();
+						behavior: 'smooth',
+						block: 'center',
+					});
+				}
 			}, 80);
 		}
 		return renderSelectedPlayer(initialIndex);

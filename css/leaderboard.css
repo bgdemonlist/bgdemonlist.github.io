@@ -397,7 +397,7 @@
 	position: absolute;
 	bottom: calc(100% + 9px);
 	left: 50%;
-	transform: translateX(-50%) translateY(4px);
+	transform: translateX(calc(-50% + var(--tooltip-shift, 0px))) translateY(4px);
 	background: var(--surface);
 	border: 1px solid var(--border);
 	border-radius: var(--radius-sm);
@@ -413,7 +413,7 @@
 	transition-delay: 0s;
 	z-index: 100;
 	width: max-content;
-	max-width: 280px;
+	max-width: min(280px, calc(100vw - 24px));
 	text-align: center;
 	display: flex;
 	flex-direction: column;
@@ -424,7 +424,7 @@
 	content: '';
 	position: absolute;
 	top: 100%;
-	left: 50%;
+	left: calc(50% - var(--tooltip-shift, 0px));
 	transform: translateX(-50%);
 	border-width: 5px;
 	border-style: solid;
@@ -435,7 +435,7 @@
 	content: '';
 	position: absolute;
 	top: 100%;
-	left: 50%;
+	left: calc(50% - var(--tooltip-shift, 0px));
 	transform: translateX(-50%);
 	border-width: 6px;
 	border-style: solid;
@@ -446,7 +446,7 @@
 .completion-item:focus-within .completion-tooltip {
 	opacity: 1;
 	visibility: visible;
-	transform: translateX(-50%) translateY(0);
+	transform: translateX(calc(-50% + var(--tooltip-shift, 0px))) translateY(0);
 	transition-delay: 0.2s;
 }
 
@@ -455,7 +455,7 @@
 	font-weight: 700;
 	font-size: 0.82rem;
 	line-height: 1.25;
-	white-space: nowrap;
+	white-space: normal;
 }
 
 .tooltip-victors {
@@ -892,25 +892,49 @@
 		padding: 18px 16px;
 	}
 
+	#userStats {
+		scroll-margin-top: 68px;
+	}
+
 	#leaderboard {
 		height: min(58vh, 480px);
 		min-height: 320px;
 	}
 
+	#player-search,
+	#province-filter,
+	#edit-player-form input[type='text'],
+	#edit-player-form select,
+	#edit-player-name {
+		font-size: 1rem;
+	}
+
 	#player-name-icon {
-		padding: 12px 12px 16px;
+		padding: 10px 8px 14px;
+		gap: 14px;
 	}
 
 	#player-name-icon #player-province {
-		height: 74px;
+		height: 64px;
+	}
+
+	#top-stats {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: 8px;
 	}
 
 	.top-container {
-		width: 48%;
-		min-width: 140px;
+		width: 100%;
+		min-width: 0;
 	}
 
 	.top-container h2 {
-		font-size: 1.05rem;
+		font-size: 1rem;
+	}
+
+	#top-stats p {
+		font-size: 0.96rem;
+		word-break: break-word;
 	}
 }
