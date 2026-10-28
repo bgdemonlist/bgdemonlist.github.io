@@ -1453,6 +1453,8 @@ loadData()
 			setTimeout(() => {
 				if (window.innerWidth <= 760) {
 					scrollUserStatsIntoViewOnMobile();
+				} else {
+					playerList[matchedIndex].element.scrollIntoView({
 						behavior: 'smooth',
 						block: 'center',
 					});
