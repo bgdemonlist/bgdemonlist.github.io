@@ -24,6 +24,9 @@ const TRANSLATIONS = {
 			Completions: 'Completion-и',
 			Player: 'Играч',
 			'Edit Player': 'Редактирай играч',
+			'Delete Player': 'Изтрий играч',
+			'First Victor': 'Първи victor',
+			'Edit Level': 'Редактирай ниво',
 			Username: 'Потребителско име',
 			'Profile Picture (JPG, PNG, WEBP)': 'Профилна снимка (JPG, PNG, WEBP)',
 			Province: 'Област',
@@ -57,7 +60,15 @@ const TRANSLATIONS = {
 			'All levels in the queue were completed.': 'Всички нива в опашката бяха завършени.',
 			'No levels were completed in this run.': 'В този run няма завършени нива.',
 			'Points on completion:': 'Точки при completion:',
+			'Points (100%):': 'Точки (100%):',
+			'published by': 'публикувано от',
+			points: 'точки',
 			Victors: 'Victor-и',
+			Records: 'Рекорди',
+			'Record Holder': 'Играч',
+			Progress: 'Прогрес',
+			'Video Proof': 'Видео',
+			'100% required to qualify': 'Изисква се 100% за квалификация',
 			'Add Level': 'Добави ниво',
 			'Remove Level': 'Премахни ниво',
 			'Add Record': 'Добави рекорд',
@@ -340,6 +351,17 @@ function getBgTextTranslation(key) {
 	if (provinceMatch) {
 		const count = Number(provinceMatch[1]);
 		return `Минато от ${count} ${count === 1 ? 'играч' : 'играчи'} в тази област:`;
+	}
+
+	const victorsMatch = key.match(/^(\d+) victors?$/i);
+	if (victorsMatch) {
+		const count = Number(victorsMatch[1]);
+		return `${count} ${count === 1 ? 'рекорд' : 'рекорда'}`;
+	}
+
+	const byCreatorMatch = key.match(/^(?:By|published by) (.+)$/);
+	if (byCreatorMatch) {
+		return `публикувано от ${byCreatorMatch[1]}`;
 	}
 
 	return key;

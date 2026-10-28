@@ -79,6 +79,10 @@ const editPlayerProvinceSelect = byId('edit-player-province');
 const editPlayerCloseBtn = byId('edit-player-close');
 const editPlayerCancelBtn = byId('edit-player-cancel');
 const editPlayerSaveBtn = byId('edit-player-save');
+const editPlayerDeleteBtn = byId('edit-player-delete');
+const playerAdminControls = byId('player-admin-controls');
+const playerEditBtn = byId('player-edit-btn');
+const playerDeleteBtn = byId('player-delete-btn');
 
 const completedPacksList = byId('completed-packs-list');
 const packsOverlay = byId('packs-overlay');
@@ -308,6 +312,7 @@ function updatePlayerNameEditability() {
 		selectedPlayerIndex >= 0;
 	playerName.classList.toggle('editable-player-name', canEdit);
 	playerName.title = canEdit ? 'Click to edit player details' : '';
+	playerAdminControls?.classList.toggle('hide', !canEdit);
 }
 
 function isPackCompletedByPlayer(pack, player) {
@@ -894,10 +899,10 @@ async function refreshLeaderboard(preferredPlayerName = '') {
 		return;
 	}
 
-	const normalizedPreferredName = normalizeKey(preferredPlayerName);
-	const targetIndex = normalizedPreferredName
+	const exactPreferredName = String(preferredPlayerName ?? '').trim();
+	const targetIndex = exactPreferredName
 		? playerList.findIndex(
-				(player) => normalizeKey(player.name) === normalizedPreferredName,
+				(player) => String(player.name ?? '').trim() === exactPreferredName,
 			)
 		: -1;
 
@@ -964,12 +969,14 @@ async function handleEditPlayerSubmit(event) {
 		const oldUserData = oldUserSnapshot.val() ?? {};
 		const oldProvince = normalizeProvince(oldUserData.province);
 		const updates = {};
-		const oldNameKeys = new Set([
-			normalizeKey(oldName),
-			normalizeKey(oldUserKey),
-			normalizeKey(oldUserData.name),
-		]);
-		const newRecordKey = normalizeKey(newName);
+		const oldExactNames = new Set(
+			[
+				String(oldName ?? '').trim(),
+				String(oldUserKey ?? '').trim(),
+				String(oldUserData.name ?? '').trim(),
+			].filter(Boolean),
+		);
+		const newRecordKey = newName;
 		const conflictingLevels = [];
 
 		if (newName !== oldUserKey) {
@@ -1002,10 +1009,10 @@ async function handleEditPlayerSubmit(event) {
 			let matchedRecordKey = null;
 
 			Object.entries(records).some(([recordKey, recordValue]) => {
-				const normalizedRecordName = normalizeKey(recordValue?.name);
+				const exactRecordName = String(recordValue?.name ?? '').trim();
 				if (
-					oldNameKeys.has(recordKey) ||
-					oldNameKeys.has(normalizedRecordName)
+					(exactRecordName && oldExactNames.has(exactRecordName)) ||
+					(!exactRecordName && oldExactNames.has(String(recordKey ?? '').trim()))
 				) {
 					matchedRecordKey = recordKey;
 					return true;
@@ -1025,7 +1032,11 @@ async function handleEditPlayerSubmit(event) {
 			};
 
 			if (matchedRecordKey !== newRecordKey) {
-				if (records[newRecordKey] && newRecordKey !== matchedRecordKey) {
+				if (
+					records[newRecordKey] &&
+					newRecordKey !== matchedRecordKey &&
+					String(records[newRecordKey]?.name ?? '').trim() !== oldName
+				) {
 					conflictingLevels.push(levelValue.name || levelKey);
 					return;
 				}
@@ -1061,6 +1072,144 @@ async function handleEditPlayerSubmit(event) {
 		if (editPlayerSaveBtn) {
 			editPlayerSaveBtn.disabled = false;
 		}
+	}
+}
+
+async function handleDeletePlayer() {
+	if (!isSignedIn) {
+		alert('You must be signed in to delete players.');
+		return;
+	}
+
+	if (isSavingPlayerEdit) {
+		return;
+	}
+
+	const selectedPlayer = playerList[selectedPlayerIndex];
+	if (!selectedPlayer) {
+		alert('Select a player first.');
+		return;
+	}
+
+	if (
+		!confirm(
+			`Delete player "${selectedPlayer.name}" and remove all of their records from every level? This cannot be undone.`,
+		)
+	) {
+		return;
+	}
+
+	isSavingPlayerEdit = true;
+	if (editPlayerDeleteBtn) editPlayerDeleteBtn.disabled = true;
+	if (editPlayerSaveBtn) editPlayerSaveBtn.disabled = true;
+	if (playerDeleteBtn) playerDeleteBtn.disabled = true;
+
+	try {
+		const [usersSnapshot, levelsSnapshot] = await Promise.all([
+			get(ref(db, 'users')),
+			get(ref(db, 'levels')),
+		]);
+
+		const exactTargetNames = new Set(
+			[
+				String(selectedPlayer.name ?? '').trim(),
+				String(selectedPlayer.userKey ?? '').trim(),
+			].filter(Boolean),
+		);
+
+		const updates = {};
+
+		if (selectedPlayer.userKey) {
+			updates[`users/${selectedPlayer.userKey}`] = null;
+		}
+
+		// Map remaining users by exact case-sensitive name/key so we can update first victor flags if needed
+		const userSnapByExact = new Map();
+		usersSnapshot.forEach((userSnap) => {
+			const userVal = userSnap.val() ?? {};
+			const uKeyExact = String(userSnap.key ?? '').trim();
+			const uNameExact = String(userVal.name ?? '').trim();
+
+			if (
+				exactTargetNames.has(uKeyExact) ||
+				(uNameExact && exactTargetNames.has(uNameExact))
+			) {
+				updates[`users/${userSnap.key}`] = null;
+				if (uKeyExact) exactTargetNames.add(uKeyExact);
+				if (uNameExact) exactTargetNames.add(uNameExact);
+			} else {
+				if (uKeyExact) userSnapByExact.set(uKeyExact, userSnap);
+				if (uNameExact) userSnapByExact.set(uNameExact, userSnap);
+			}
+		});
+
+		levelsSnapshot.forEach((levelSnap) => {
+			const levelKey = levelSnap.key;
+			const levelVal = levelSnap.val() ?? {};
+			const records = levelVal.records ?? {};
+			const remainingEntries = [];
+			let removedAnyOnLevel = false;
+
+			Object.entries(records).forEach(([recKey, recVal]) => {
+				const recNameExact = String(recVal?.name ?? '').trim();
+				const isTargetRecord = recNameExact
+					? exactTargetNames.has(recNameExact)
+					: exactTargetNames.has(String(recKey ?? '').trim());
+
+				if (isTargetRecord) {
+					updates[`levels/${levelKey}/records/${recKey}`] = null;
+					removedAnyOnLevel = true;
+				} else if (recVal?.name) {
+					remainingEntries.push({
+						recKey,
+						...recVal,
+					});
+				}
+			});
+
+			if (removedAnyOnLevel && remainingEntries.length > 0) {
+				remainingEntries.sort(
+					(a, b) => (a.recordNum ?? -1) - (b.recordNum ?? -1),
+				);
+
+				remainingEntries.forEach((entry, idx) => {
+					const isFirst = idx === 0;
+					updates[`levels/${levelKey}/records/${entry.recKey}/recordNum`] = idx;
+
+					const holderSnap =
+						userSnapByExact.get(String(entry.name ?? '').trim()) ||
+						userSnapByExact.get(String(entry.recKey ?? '').trim());
+
+					if (holderSnap) {
+						const holderRecords = holderSnap.val()?.records ?? {};
+						Object.entries(holderRecords).forEach(([uRecKey, uRecVal]) => {
+							if (
+								uRecKey === levelKey ||
+								normalizeKey(uRecKey) === normalizeKey(levelKey) ||
+								normalizeKey(uRecVal?.name) === normalizeKey(levelVal.name || levelKey)
+							) {
+								updates[`users/${holderSnap.key}/records/${uRecKey}/first`] = isFirst;
+							}
+						});
+					}
+				});
+			}
+		});
+
+		if (Object.keys(updates).length > 0) {
+			await update(ref(db), updates);
+		}
+
+		closeEditPlayerPopup();
+		await refreshLeaderboard();
+	} catch (error) {
+		console.error('Failed to delete player.', error);
+		alert('Could not delete player. Please try again.');
+	} finally {
+		isSavingPlayerEdit = false;
+		if (editPlayerDeleteBtn) editPlayerDeleteBtn.disabled = false;
+		if (editPlayerSaveBtn) editPlayerSaveBtn.disabled = false;
+		if (playerDeleteBtn) playerDeleteBtn.disabled = false;
 	}
 }
 
@@ -1203,6 +1352,18 @@ playerName?.addEventListener('click', () => {
 	openEditPlayerPopup();
 });
 
+playerEditBtn?.addEventListener('click', () => {
+	openEditPlayerPopup();
+});
+
+playerDeleteBtn?.addEventListener('click', () => {
+	handleDeletePlayer();
+});
+
+editPlayerDeleteBtn?.addEventListener('click', () => {
+	handleDeletePlayer();
+});
+
 editPlayerCloseBtn?.addEventListener('click', () => {
 	closeEditPlayerPopup();
 });
@@ -1245,7 +1406,30 @@ loadData()
 	.then(() => {
 		renderLeaderboard();
 		renderProvinceLeaderboard();
-		return renderSelectedPlayer(0);
+		const requestedPlayer = String(
+			new URL(window.location.href).searchParams.get('player') ?? '',
+		).trim();
+		let matchedIndex = requestedPlayer
+			? playerList.findIndex(
+					(player) => String(player.name ?? '').trim() === requestedPlayer,
+				)
+			: -1;
+		if (matchedIndex < 0 && requestedPlayer) {
+			const normalizedRequested = normalizeKey(requestedPlayer);
+			matchedIndex = playerList.findIndex(
+				(player) => normalizeKey(player.name) === normalizedRequested,
+			);
+		}
+		const initialIndex = matchedIndex >= 0 ? matchedIndex : 0;
+		if (matchedIndex >= 0 && playerList[matchedIndex]?.element) {
+			setTimeout(() => {
+				playerList[matchedIndex].element.scrollIntoView({
+					behavior: 'smooth',
+					block: 'center',
+				});
+			}, 80);
+		}
+		return renderSelectedPlayer(initialIndex);
 	})
 	.catch((error) => {
 		console.error('Failed to load leaderboard.', error);

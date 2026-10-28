@@ -10,6 +10,7 @@ import { onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/9.22.1/fi
 import {
 	auth,
 	byId,
+	calculatePoints,
 	db,
 	getYouTubeThumbnail,
 	initAuthNavigation,
@@ -110,7 +111,7 @@ function createLevelCard(level, totalLevels) {
 
 	const levelName = document.createElement('h4');
 	levelName.className = 'level-name';
-	setText(levelName, `#${level.pos} - ${level.name}`);
+	setText(levelName, `#${level.pos} – ${level.name}`);
 	levelName.addEventListener('click', () => {
 		location.href = `level.html?pos=${level.pos}`;
 	});
@@ -118,8 +119,26 @@ function createLevelCard(level, totalLevels) {
 
 	const levelCreator = document.createElement('p');
 	levelCreator.className = 'level-creator';
-	setText(levelCreator, level.creator, 'Unknown creator');
+	const prefixSpan = document.createElement('span');
+	prefixSpan.className = 'creator-prefix';
+	setText(prefixSpan, 'published by');
+	const creatorNameSpan = document.createElement('span');
+	creatorNameSpan.className = 'creator-name';
+	creatorNameSpan.dataset.i18nIgnore = '';
+	setText(creatorNameSpan, level.creator, 'Unknown creator');
+	levelCreator.append(prefixSpan, document.createTextNode(' '), creatorNameSpan);
 	textContainer.append(levelCreator);
+
+	const levelPoints = document.createElement('p');
+	levelPoints.className = 'level-points';
+	const ptsValSpan = document.createElement('span');
+	ptsValSpan.dataset.i18nIgnore = '';
+	setText(ptsValSpan, calculatePoints(level.pos).toFixed(2));
+	const ptsLabelSpan = document.createElement('span');
+	setText(ptsLabelSpan, 'points');
+	levelPoints.append(ptsValSpan, document.createTextNode(' '), ptsLabelSpan);
+	textContainer.append(levelPoints);
+
 	levelContainer.append(textContainer);
 
 	if (isAdminLoggedIn) {

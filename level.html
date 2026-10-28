@@ -45,6 +45,10 @@
 			<form id="add-popup-bottom">
 				<input id="add-popup-name" placeholder="Holder Name...">
 				<input id="add-popup-video" placeholder="Video Link...">
+				<label class="popup-checkbox-row">
+					<input type="checkbox" id="add-popup-first">
+					<span>First Victor</span>
+				</label>
 				<button>Submit</button>
 			</form>
 		</div>
@@ -58,6 +62,10 @@
 				<input id="edit-popup-name" placeholder="Level Name...">
 				<input id="edit-popup-creator" placeholder="Creator Name...">
 				<input id="edit-popup-video" placeholder="Video Link...">
+				<div class="popup-field-group">
+					<label for="edit-popup-first-victor">First Victor</label>
+					<select id="edit-popup-first-victor"></select>
+				</div>
 				<button>Save</button>
 			</form>
 		</div>
@@ -74,17 +82,21 @@
 		</nav>
 	</header>
 	<section id="level-section">
-		<div class="container">
+		<div class="container" id="level-info-panel">
 			<div id="level-header">
+				<a id="prev-level-btn" class="level-nav-arrow hide" aria-label="Previous level"><i class="fa-solid fa-chevron-left"></i></a>
 				<h2 class="titles" id="levelName"></h2>
+				<a id="next-level-btn" class="level-nav-arrow hide" aria-label="Next level"><i class="fa-solid fa-chevron-right"></i></a>
 				<i class="fa-solid fa-pen admin-only" id="edit-level-btn" style="display: none;"></i>
 			</div>
 			<p class="sub-title" id="levelCreator"></p>
 			<div id="level-video"></div>
-			<h3 id="score-text">Points on completion:</h3>
-			<p id="score"></p>
+			<div id="level-score-box">
+				<h3 id="score-text">Points on completion:</h3>
+				<p id="score"></p>
+			</div>
 		</div>
-		<div class="container">
+		<div class="container" id="level-records-panel">
 			<h2 class="titles">Victors</h2>
 			<div id="add-remove-div" class="admin-only" style="display: none;">
 				<i class="fa-solid fa-plus" id="plus"></i>

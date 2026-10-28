@@ -26,6 +26,22 @@ export const auth = getAuth(app);
 // Configurable multiplier for pack completion bonus points (0.10 = 10% of sum of level points)
 export const PACK_BONUS_MULTIPLIER = 0.10;
 
+export function calculatePoints(pos) {
+	if (!Number.isFinite(pos)) {
+		return 0;
+	}
+
+	if (pos <= 20) {
+		return 322.2 * 0.945 ** (pos - 1) + 0.8;
+	}
+
+	if (pos <= 400) {
+		return 106.2 * 0.9882 ** (pos - 20);
+	}
+
+	return 1;
+}
+
 export function calculatePackLevelPointsSum(packLevels, levelPositionByName, calculatePointsFn) {
 	if (!Array.isArray(packLevels) || !packLevels.length) {
 		return 0;
