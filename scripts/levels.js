@@ -89,6 +89,14 @@ function trimName(value) {
 	return String(value ?? '').trim();
 }
 
+function isInvalidDatabaseKey(value) {
+	return /[.#$/\[\]]/.test(value);
+}
+
+function toSafeDatabaseKey(value) {
+	return trimName(value).replace(/[.#$/\[\]]/g, '_');
+}
+
 function buildUserKeyLookup(usersSnapshot) {
 	const userKeyLookup = new Map();
 
@@ -165,13 +173,17 @@ function applyOrderedRecordsUpdates(
 	levelDisplayName,
 	orderedRecords,
 	usersSnapshot,
+	startIndex = 0,
+	skipUserKey = null,
 ) {
-	const normalizedLevelKey = normalizeKey(levelKey);
+	const normalizedLevelKey = toSafeDatabaseKey(normalizeKey(levelKey));
 	const normalizedLevelName = normalizeKey(levelDisplayName);
 
 	orderedRecords.forEach((entry, index) => {
-		const isFirst = index === 0;
-		updates[`levels/${levelKey}/records/${entry.levelRecordKey}/recordNum`] = index;
+		const recordOrder = startIndex + index;
+		const isFirst = recordOrder === 0;
+		updates[`levels/${levelKey}/records/${entry.levelRecordKey}/recordNum`] =
+			recordOrder;
 
 		const matchingUsers = findMatchingUserSnapshots(
 			usersSnapshot,
@@ -179,6 +191,10 @@ function applyOrderedRecordsUpdates(
 		);
 
 		matchingUsers.forEach((userSnap) => {
+			if (skipUserKey && userSnap.key === skipUserKey) {
+				return;
+			}
+
 			const userVal = userSnap.val() ?? {};
 			const userRecords = userVal.records ?? {};
 			let foundRecKey = null;
@@ -350,11 +366,11 @@ async function deleteRecord(record, buttonElement) {
 		});
 
 		// Also fallback in case the user key wasn't in usersSnapshot for some reason
-		if (targetRecord.userKey) {
+		if (targetRecord.userKey && !isInvalidDatabaseKey(targetRecord.userKey)) {
 			updates[`users/${targetRecord.userKey}/records/${levelKey}`] = null;
 			updates[`users/${targetRecord.userKey}/records/${normalizedLevelKey}`] = null;
 		}
-		if (targetRecord.name) {
+		if (targetRecord.name && !isInvalidDatabaseKey(targetRecord.name)) {
 			updates[`users/${targetRecord.name}/records/${levelKey}`] = null;
 			updates[`users/${targetRecord.name}/records/${normalizedLevelKey}`] = null;
 		}
@@ -686,6 +702,9 @@ function populateFirstVictorSelect() {
 
 // Event Listeners for Admin Modals
 plus?.addEventListener('click', () => {
+	if (!currentLevel?.name) {
+		return;
+	}
 	if (addPopupFirstCheckbox) {
 		addPopupFirstCheckbox.checked = currentRecords.length === 0;
 	}
@@ -699,94 +718,141 @@ addPopupExit?.addEventListener('click', () => {
 addPopupForm?.addEventListener('submit', async (event) => {
 	event.preventDefault();
 
-	const rawName = byId('add-popup-name').value.trim();
-	const video = byId('add-popup-video').value.trim();
-	const level = currentLevel?.name || levelName.textContent.trim();
+	if (!currentLevel?.name) {
+		alert('Level not loaded yet.');
+		return;
+	}
+
+	const rawName = byId('add-popup-name')?.value.trim() ?? '';
+	const video = byId('add-popup-video')?.value.trim() ?? '';
+	const level = currentLevel.name;
 	const levelKey = currentLevelKey || normalizeKey(level);
+	const normalizedLevelKey = toSafeDatabaseKey(normalizeKey(levelKey));
+	const normalizedLevelName = normalizeKey(level);
 	const makeFirstVictor = Boolean(addPopupFirstCheckbox?.checked);
 
-	if (!rawName || !video || !level) {
+	if (!rawName || !video || !levelKey) {
 		alert('Please provide both a player name and a video link.');
 		return;
 	}
 
-	const [recordsSnapshot, usersSnapshot] = await Promise.all([
-		get(ref(db, `levels/${levelKey}/records`)),
-		get(ref(db, 'users')),
-	]);
-
-	const userKeyLookup = buildUserKeyLookup(usersSnapshot);
-	const resolvedUserKey = userKeyLookup.get(rawName) || rawName;
-	const existingUserVal = usersSnapshot.child(resolvedUserKey).val();
-	const canonicalName = trimName(existingUserVal?.name || rawName);
-
-	const existingRecords = sortRecordsByOrder(
-		extractRecords(recordsSnapshot, userKeyLookup),
-	);
-	const existingSamePlayerRec = existingRecords.find(
-		(r) => trimName(r.name) === canonicalName,
-	);
-	const newRecordKey = existingSamePlayerRec?.levelRecordKey || canonicalName;
-
-	const updates = {};
-
-	if (!usersSnapshot.child(resolvedUserKey).exists()) {
-		updates[`users/${resolvedUserKey}/name`] = canonicalName;
+	const submitBtn = addPopupForm.querySelector('button');
+	if (submitBtn) {
+		submitBtn.disabled = true;
 	}
 
-	if (makeFirstVictor || existingRecords.length === 0) {
+	try {
+		const [recordsSnapshot, usersSnapshot] = await Promise.all([
+			get(ref(db, `levels/${levelKey}/records`)),
+			get(ref(db, 'users')),
+		]);
+
+		const userKeyLookup = buildUserKeyLookup(usersSnapshot);
+		const resolvedUserKey =
+			userKeyLookup.get(rawName) || toSafeDatabaseKey(rawName);
+		const existingUserSnap = usersSnapshot.child(resolvedUserKey);
+		const existingUserVal = existingUserSnap.val();
+		const canonicalName = trimName(existingUserVal?.name || rawName);
+
+		const existingRecords = sortRecordsByOrder(
+			extractRecords(recordsSnapshot, userKeyLookup),
+		);
+		const existingSamePlayerRec = existingRecords.find(
+			(r) => trimName(r.name) === canonicalName,
+		);
+		const newRecordKey =
+			existingSamePlayerRec?.levelRecordKey || toSafeDatabaseKey(canonicalName);
+
+		const updates = {};
+
+		if (!existingUserSnap.exists()) {
+			updates[`users/${resolvedUserKey}/name`] = canonicalName;
+		}
+
+		// Clean up any duplicate level record keys for the same player
+		existingRecords.forEach((r) => {
+			if (
+				trimName(r.name) === canonicalName &&
+				r.levelRecordKey !== newRecordKey
+			) {
+				updates[`levels/${levelKey}/records/${r.levelRecordKey}`] = null;
+			}
+		});
+
+		// Clean up any legacy differently-cased record keys on the player's profile
+		const existingUserRecords = existingUserVal?.records ?? {};
+		Object.entries(existingUserRecords).forEach(([recKey, recVal]) => {
+			const recKeyNorm = normalizeKey(recKey);
+			const recNameNorm = normalizeKey(recVal?.name);
+			if (
+				recKey !== normalizedLevelKey &&
+				(recKey === levelKey ||
+					recKeyNorm === normalizedLevelKey ||
+					recKeyNorm === normalizedLevelName ||
+					(recNameNorm && recNameNorm === normalizedLevelName))
+			) {
+				updates[`users/${resolvedUserKey}/records/${recKey}`] = null;
+			}
+		});
+
 		const remaining = existingRecords.filter(
 			(r) =>
 				r.levelRecordKey !== newRecordKey &&
 				trimName(r.name) !== canonicalName,
 		);
-		const newEntry = {
-			name: canonicalName,
-			video,
-			recordNum: 0,
-			levelRecordKey: newRecordKey,
-			userKey: resolvedUserKey,
-		};
-		updates[`levels/${levelKey}/records/${newRecordKey}`] = {
-			name: canonicalName,
-			video,
-			recordNum: 0,
-		};
-		updates[`users/${resolvedUserKey}/records/${normalizeKey(level)}`] = {
-			first: true,
-			name: level,
-			video,
-		};
-		applyOrderedRecordsUpdates(
-			updates,
-			levelKey,
-			level,
-			[newEntry, ...remaining],
-			usersSnapshot,
-		);
-	} else {
-		const recordNum = existingSamePlayerRec
-			? (existingSamePlayerRec.recordNum ?? existingRecords.length - 1)
-			: existingRecords.length;
-		updates[`levels/${levelKey}/records/${newRecordKey}`] = {
-			name: canonicalName,
-			video,
-			recordNum,
-		};
-		updates[`users/${resolvedUserKey}/records/${normalizeKey(level)}`] = {
-			first: false,
-			name: level,
-			video,
-		};
+
+		if (makeFirstVictor || remaining.length === 0) {
+			updates[`levels/${levelKey}/records/${newRecordKey}`] = {
+				name: canonicalName,
+				video,
+				recordNum: 0,
+			};
+			updates[`users/${resolvedUserKey}/records/${normalizedLevelKey}`] = {
+				first: true,
+				name: level,
+				video,
+			};
+			applyOrderedRecordsUpdates(
+				updates,
+				levelKey,
+				level,
+				remaining,
+				usersSnapshot,
+				1,
+				resolvedUserKey,
+			);
+		} else {
+			const existingIndex = existingSamePlayerRec
+				? existingRecords.indexOf(existingSamePlayerRec)
+				: -1;
+			const recordNum = existingSamePlayerRec
+				? (existingSamePlayerRec.recordNum ?? existingIndex)
+				: existingRecords.length;
+			updates[`levels/${levelKey}/records/${newRecordKey}`] = {
+				name: canonicalName,
+				video,
+				recordNum,
+			};
+			updates[`users/${resolvedUserKey}/records/${normalizedLevelKey}`] = {
+				first: recordNum === 0,
+				name: level,
+				video,
+			};
+		}
+
+		await update(ref(db), updates);
+
+		addPopupForm.reset();
+		setPopupVisibility(false);
+		await loadLevel();
+	} catch (error) {
+		console.error('Failed to add record.', error);
+		alert('Could not add this record. Please try again.');
+	} finally {
+		if (submitBtn) {
+			submitBtn.disabled = false;
+		}
 	}
-
-	await update(ref(db), updates);
-
-	addPopupForm.reset();
-	setPopupVisibility(false);
-	loadLevel().catch((error) => {
-		console.error('Failed to refresh level records.', error);
-	});
 });
 
 editLevelBtn?.addEventListener('click', () => {
