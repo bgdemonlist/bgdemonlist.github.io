@@ -1,7 +1,5 @@
 import {
 	get,
-	orderByChild,
-	query,
 	ref,
 	remove,
 	set,
@@ -12,7 +10,16 @@ import {
 	signInWithEmailAndPassword,
 	signOut,
 } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
-import { auth, byId, db, initAuthNavigation, normalizeKey, setText } from './app-common.js';
+import {
+	auth,
+	byId,
+	db,
+	getLevelsCached,
+	initAuthNavigation,
+	normalizeKey,
+	setText,
+	touchDatabaseVersion,
+} from './app-common.js';
 
 // Auth elements
 const loginSection = byId('admin-login-section');
@@ -190,14 +197,8 @@ async function loadLevels() {
 	levelCheckboxesContainer.innerHTML = '<div class="loading-text">Loading levels...</div>';
 
 	try {
-		const levelsSnapshot = await get(query(ref(db, 'levels'), orderByChild('pos')));
-		levelsList = [];
-		levelsSnapshot.forEach((snap) => {
-			const val = snap.val();
-			if (val && val.name && typeof val.pos === 'number') {
-				levelsList.push(val);
-			}
-		});
+		const { levels } = await getLevelsCached();
+		levelsList = levels.filter((val) => val && val.name && typeof val.pos === 'number');
 
 		// Sort by position ascending
 		levelsList.sort((a, b) => a.pos - b.pos);
@@ -333,6 +334,7 @@ async function handlePackFormSubmit(e) {
 		};
 
 		await set(ref(db, `packs/${packKey}`), packData);
+		await touchDatabaseVersion();
 
 		resetPackForm();
 		await loadPacks();
@@ -505,6 +507,7 @@ async function moveTier(currentIndex, direction) {
 	try {
 		if (Object.keys(updates).length > 0) {
 			await update(ref(db), updates);
+			await touchDatabaseVersion();
 		}
 		await loadTiers();
 		await loadPacks();
@@ -544,6 +547,7 @@ async function handleTierFormSubmit(e) {
 		};
 
 		await set(ref(db, `tiers/${tierKey}`), tierData);
+		await touchDatabaseVersion();
 
 		resetTierForm();
 		await loadTiers();
@@ -592,6 +596,7 @@ async function deleteTier(tier) {
 
 	try {
 		await remove(ref(db, `tiers/${tier.key}`));
+		await touchDatabaseVersion();
 		await loadTiers();
 		await loadPacks();
 		if (tierIdInput?.value === tier.key) {
@@ -680,6 +685,7 @@ async function movePack(currentIndex, direction) {
 	try {
 		if (Object.keys(updates).length > 0) {
 			await update(ref(db), updates);
+			await touchDatabaseVersion();
 		}
 		await loadPacks();
 	} catch (err) {
@@ -809,6 +815,7 @@ async function deletePack(pack) {
 
 	try {
 		await remove(ref(db, `packs/${pack.key}`));
+		await touchDatabaseVersion();
 		await loadPacks();
 		if (packIdInput?.value === pack.key) {
 			resetPackForm();

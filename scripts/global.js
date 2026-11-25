@@ -13,7 +13,40 @@ const TRANSLATIONS = {
 			Admin: 'Админ',
 			Roulette: 'Рулетка',
 			Leaderboard: 'Класация',
+			Calculator: 'Калкулатор',
 			Guidelines: 'Правила',
+			'List Points Calculator': 'Калкулатор на точки',
+			"Load a player's records, add hypothetical completions or unplaced levels, and see your projected points and leaderboard rank.":
+				'Заредете рекордите на играч, добавете хипотетични completion-и или нови нива и вижте прогнозираните точки и ранг в класацията.',
+			'Start Blank': 'На чисто',
+			Reset: 'Нулирай',
+			'Blank Profile': 'Празен профил',
+			'Loaded Player': 'Зареден играч',
+			'Loading list data...': 'Зареждане на данните...',
+			'Failed to load list data': 'Данните не се заредиха',
+			'Projected Points': 'Прогнозни точки',
+			'Projected Rank': 'Прогнозен ранг',
+			'New Hardest': 'Нов най-труден',
+			'Add Simulated Record': 'Добави симулиран рекорд',
+			'Existing List Level': 'Ниво от листа',
+			'Unplaced Level': 'Ново ниво (извън листа)',
+			'Hide beaten': 'Скрий минатите',
+			"Simulate beating a level that isn't on the list yet (First Victor) and estimate where it would be placed.":
+				'Симулирайте минаване на ниво, което все още не е в листа (First Victor), и изберете очакваната му позиция.',
+			'Level Name': 'Име на ниво',
+			'Estimated Placement (#)': 'Очаквана позиция (#)',
+			'Or Place Directly Above an Existing Level': 'Или поставете директно над съществуващо ниво',
+			'Shift existing levels down when placing unplaced levels':
+				'Измести съществуващите нива надолу при добавяне на нови нива',
+			'Add Unplaced Level': 'Добави ново ниво',
+			'Simulated Records': 'Симулирани рекорди',
+			Simulated: 'Симулирани',
+			Real: 'Реални',
+			'Level Packs Impact': 'Ефект върху пакети с нива',
+			'1 Level Away from Pack Bonus:': '1 ниво до бонус от пакет:',
+			'Projected Leaderboard': 'Прогнозна класация',
+			'Jump to Me': 'Към мен',
+			Nearby: 'Наблизо',
 			'BG Demon Roulette': 'BG Demon Рулетка',
 			'BG Demon List': 'BG Demon List',
 			'Rank:': 'Ранг:',
@@ -147,6 +180,10 @@ const TRANSLATIONS = {
 			'Video Link...': 'Видео линк...',
 			'Posiiton...': 'Позиция...',
 			'Holder Name...': 'Име на играч...',
+			'Load a player...': 'Зареди играч...',
+			'Search levels by name, creator, or #rank...': 'Търси ниво по име, автор или #позиция...',
+			'e.g. Acheron, Silent Clubstep...': 'напр. Acheron, Silent Clubstep...',
+			'Search leaderboard...': 'Търси в класацията...',
 		},
 	},
 };
@@ -430,6 +467,7 @@ function setupFooter() {
 						<li><a href="index.html">Demon List</a></li>
 						<li><a href="roulette.html">Roulette</a></li>
 						<li><a href="leaderboard.html">Leaderboard</a></li>
+						<li><a href="calculator.html">Calculator</a></li>
 						<li><a href="guidelines.html">Guidelines</a></li>
 					</ul>
 				</div>

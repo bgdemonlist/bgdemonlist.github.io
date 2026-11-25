@@ -1,12 +1,6 @@
 import {
-	get,
-	orderByChild,
-	query,
-	ref,
-} from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
-import {
 	byId,
-	db,
+	getLevelsCached,
 	getYouTubeThumbnail,
 	initAuthNavigation,
 	openExternal,
@@ -463,10 +457,9 @@ saveBtn?.addEventListener('click', saveGame);
 loadBtn?.addEventListener('click', () => loadFileInput.click());
 loadFileInput?.addEventListener('change', loadGame);
 
-get(query(ref(db, 'levels'), orderByChild('pos')))
-	.then((snapshot) => {
-		snapshot.forEach((child) => {
-			const level = child.val();
+getLevelsCached()
+	.then(({ levels }) => {
+		levels.forEach((level) => {
 			if (level?.name && typeof level.pos === 'number') {
 				allLevels.push(level);
 			}

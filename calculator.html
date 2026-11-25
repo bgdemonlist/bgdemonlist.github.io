@@ -1,0 +1,353 @@
+<!doctype html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>List Points Calculator</title>
+		<script>
+			// Apply the saved theme/language before the first paint to avoid a flash (global.js handles the rest).
+			(function () {
+				var root = document.documentElement;
+				try {
+					var theme = localStorage.getItem('bdl-theme');
+					root.dataset.theme = theme === 'light' || theme === 'dark' ? theme
+						: matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+					if (localStorage.getItem('bdl-language') === 'bg') {
+						root.lang = 'bg';
+						root.dataset.language = 'bg';
+						root.dataset.i18nPending = '';
+						setTimeout(function () { delete root.dataset.i18nPending; }, 1500);
+					}
+				} catch (e) {}
+			})();
+		</script>
+		<link rel="preconnect" href="https://www.gstatic.com" crossorigin />
+		<link rel="preconnect" href="https://bulgarian-demonlist-default-rtdb.europe-west1.firebasedatabase.app" />
+		<link rel="modulepreload" href="scripts/app-common.js" />
+		<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js" />
+		<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js" />
+		<link rel="modulepreload" href="https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js" />
+		<link rel="stylesheet" href="css/global.css" />
+		<link rel="stylesheet" href="css/calculator.css" />
+		<script src="scripts/global.js" type="module"></script>
+		<script src="scripts/calculator.js" type="module"></script>
+		<script src="https://kit.fontawesome.com/811caf8c84.js" crossorigin="anonymous"></script>
+	</head>
+	<body>
+		<header>
+			<h3 id="logo"><a href="/">BGDL</a></h3>
+			<nav>
+				<ul id="nav_links">
+					<li><a href="roulette.html">Roulette</a></li>
+					<li><a href="leaderboard.html">Leaderboard</a></li>
+					<li><a href="calculator.html">Calculator</a></li>
+					<li><a href="guidelines.html">Guidelines</a></li>
+				</ul>
+			</nav>
+		</header>
+
+		<main id="calc-page">
+			<!-- Hero & Player Loader -->
+			<section id="calc-header-card" class="calc-card">
+				<div class="calc-header-top">
+					<div class="calc-title-group">
+						<h1>List Points Calculator</h1>
+						<p class="calc-subtitle">
+							Load a player's records, add hypothetical completions or unplaced levels, and see your projected points and leaderboard rank.
+						</p>
+					</div>
+
+					<div class="calc-loader-controls">
+						<div class="player-picker-wrap">
+							<div class="player-picker-input-box">
+								<i class="fa-solid fa-user" aria-hidden="true"></i>
+								<input
+									id="player-picker-input"
+									type="text"
+									placeholder="Load a player..."
+									autocomplete="off"
+									aria-label="Load a player"
+									aria-expanded="false"
+									aria-controls="player-picker-dropdown"
+								/>
+								<button
+									id="player-picker-clear"
+									type="button"
+									class="icon-clear-btn hide"
+									title="Clear search"
+									aria-label="Clear search"
+								>
+									<i class="fa-solid fa-xmark" aria-hidden="true"></i>
+								</button>
+							</div>
+							<ul
+								id="player-picker-dropdown"
+								class="picker-dropdown hide"
+								role="listbox"
+								data-i18n-ignore
+							></ul>
+						</div>
+
+						<button id="start-blank-btn" type="button" class="calc-btn-secondary">
+							<i class="fa-solid fa-user-plus" aria-hidden="true"></i>
+							<span>Start Blank</span>
+						</button>
+
+						<button id="reset-sim-btn" type="button" class="calc-btn-danger" disabled>
+							<i class="fa-solid fa-rotate-left" aria-hidden="true"></i>
+							<span>Reset</span>
+						</button>
+					</div>
+				</div>
+
+				<div id="active-profile-bar" class="active-profile-bar">
+					<div class="active-profile-identity">
+						<img id="active-profile-flag" class="profile-flag hide" alt="" />
+						<span id="active-profile-badge" class="profile-mode-badge">Blank Profile</span>
+						<span id="active-profile-name" class="active-profile-name" data-i18n-ignore>Custom Player</span>
+					</div>
+					<div id="calc-loading-status" class="calc-status-pill">
+						<i class="fa-solid fa-spinner fa-spin" aria-hidden="true"></i>
+						<span>Loading list data...</span>
+					</div>
+				</div>
+			</section>
+
+			<!-- Live Projected Stats Summary -->
+			<section id="calc-summary-grid" aria-label="Projected stats">
+				<div class="summary-stat-card">
+					<div class="summary-stat-header">
+						<span class="summary-stat-label">Projected Points</span>
+						<span id="stat-points-delta" class="delta-badge neutral hide" data-i18n-ignore></span>
+					</div>
+					<div id="stat-points-value" class="summary-stat-value" data-i18n-ignore>0.00</div>
+					<div id="stat-points-sub" class="summary-stat-sub" data-i18n-ignore>Base: 0.00 • Packs: 0.00</div>
+				</div>
+
+				<div class="summary-stat-card">
+					<div class="summary-stat-header">
+						<span class="summary-stat-label">Projected Rank</span>
+						<span id="stat-rank-delta" class="delta-badge neutral hide" data-i18n-ignore></span>
+					</div>
+					<div id="stat-rank-value" class="summary-stat-value" data-i18n-ignore>-</div>
+					<div id="stat-rank-sub" class="summary-stat-sub" data-i18n-ignore>Add records to place on leaderboard</div>
+				</div>
+
+				<div class="summary-stat-card">
+					<div class="summary-stat-header">
+						<span class="summary-stat-label">Completions</span>
+						<span id="stat-completions-delta" class="delta-badge positive hide" data-i18n-ignore></span>
+					</div>
+					<div id="stat-completions-value" class="summary-stat-value" data-i18n-ignore>0</div>
+					<div id="stat-completions-sub" class="summary-stat-sub" data-i18n-ignore>0 real • 0 simulated</div>
+				</div>
+
+				<div class="summary-stat-card">
+					<div class="summary-stat-header">
+						<span class="summary-stat-label">Hardest Demon</span>
+						<span id="stat-hardest-badge" class="delta-badge accent hide">New Hardest</span>
+					</div>
+					<div id="stat-hardest-value" class="summary-stat-value summary-stat-hardest" data-i18n-ignore>-</div>
+					<div id="stat-hardest-sub" class="summary-stat-sub" data-i18n-ignore>No completions yet</div>
+				</div>
+			</section>
+
+			<!-- Main Workspace: Left (Add + Records) / Right (Projected Leaderboard) -->
+			<div id="calc-workspace">
+				<div id="calc-left-col">
+					<!-- Add Fake Record Panel -->
+					<section id="add-record-card" class="calc-card">
+						<div class="calc-card-header">
+							<h2>
+								<i class="fa-solid fa-plus-circle" aria-hidden="true"></i>
+								<span>Add Simulated Record</span>
+							</h2>
+						</div>
+
+						<div class="calc-tabs" role="tablist">
+							<button
+								id="tab-existing"
+								type="button"
+								class="calc-tab active"
+								role="tab"
+								aria-selected="true"
+								aria-controls="panel-existing"
+							>
+								<i class="fa-solid fa-list-ol" aria-hidden="true"></i>
+								<span>Existing List Level</span>
+							</button>
+							<button
+								id="tab-unplaced"
+								type="button"
+								class="calc-tab"
+								role="tab"
+								aria-selected="false"
+								aria-controls="panel-unplaced"
+							>
+								<i class="fa-solid fa-wand-magic-sparkles" aria-hidden="true"></i>
+								<span>Unplaced Level</span>
+							</button>
+						</div>
+
+						<!-- Tab 1: Existing List Level -->
+						<div id="panel-existing" class="calc-tab-panel" role="tabpanel">
+							<div class="existing-toolbar">
+								<div class="search-input-wrap">
+									<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+									<input
+										id="existing-level-search"
+										type="text"
+										placeholder="Search levels by name, creator, or #rank..."
+										autocomplete="off"
+									/>
+								</div>
+								<label class="checkbox-inline">
+									<input id="hide-completed-toggle" type="checkbox" checked />
+									<span>Hide beaten</span>
+								</label>
+							</div>
+
+							<ul id="existing-levels-list" class="existing-levels-list" data-i18n-ignore></ul>
+						</div>
+
+						<!-- Tab 2: Unplaced / Custom Level (First Victor) -->
+						<div id="panel-unplaced" class="calc-tab-panel hide" role="tabpanel">
+							<p class="unplaced-intro">
+								Simulate beating a level that isn't on the list yet (First Victor) and estimate where it would be placed.
+							</p>
+
+							<form id="unplaced-form" class="unplaced-form">
+								<div class="form-row-grid">
+									<div class="form-field">
+										<label for="unplaced-name">Level Name</label>
+										<input
+											id="unplaced-name"
+											type="text"
+											maxlength="60"
+											placeholder="e.g. Acheron, Silent Clubstep..."
+											autocomplete="off"
+										/>
+									</div>
+									<div class="form-field form-field-pos">
+										<label for="unplaced-pos">Estimated Placement (#)</label>
+										<input
+											id="unplaced-pos"
+											type="number"
+											min="1"
+											value="1"
+											required
+										/>
+									</div>
+								</div>
+
+								<div class="form-field">
+									<label for="unplaced-anchor-select">Or Place Directly Above an Existing Level</label>
+									<select id="unplaced-anchor-select" data-i18n-ignore></select>
+								</div>
+
+								<div id="unplaced-preview" class="unplaced-preview-box" data-i18n-ignore>
+									<div class="preview-line">
+										<span class="preview-label">Placement:</span>
+										<span id="unplaced-preview-neighbors" class="preview-value">-</span>
+									</div>
+									<div class="preview-metrics">
+										<span id="unplaced-preview-level-pts" class="preview-chip accent">+0.00 pts</span>
+										<span id="unplaced-preview-net-pts" class="preview-chip neutral">Net: +0.00 pts</span>
+									</div>
+								</div>
+
+								<div class="unplaced-form-footer">
+									<label class="checkbox-inline shift-toggle-label">
+										<input id="shift-list-toggle" type="checkbox" checked />
+										<span>Shift existing levels down when placing unplaced levels</span>
+									</label>
+
+									<button id="add-unplaced-btn" type="submit" class="calc-btn-primary">
+										<i class="fa-solid fa-plus" aria-hidden="true"></i>
+										<span>Add Unplaced Level</span>
+									</button>
+								</div>
+							</form>
+						</div>
+					</section>
+
+					<!-- Active Simulated Records & Packs -->
+					<section id="records-card" class="calc-card">
+						<div class="calc-card-header records-header">
+							<div class="records-header-title">
+								<h2>
+									<i class="fa-solid fa-trophy" aria-hidden="true"></i>
+									<span>Simulated Records</span>
+								</h2>
+								<span id="records-count-pill" class="count-pill" data-i18n-ignore>0</span>
+							</div>
+
+							<div class="records-filter-group" role="group" aria-label="Filter records">
+								<button type="button" class="filter-chip active" data-filter="all">All</button>
+								<button type="button" class="filter-chip" data-filter="simulated">Simulated</button>
+								<button type="button" class="filter-chip" data-filter="real">Real</button>
+							</div>
+						</div>
+
+						<div id="shift-notice-banner" class="info-banner hide" data-i18n-ignore></div>
+
+						<ul id="records-list" class="sim-records-list" data-i18n-ignore></ul>
+
+						<!-- Level Packs Impact -->
+						<div id="calc-packs-section" class="calc-packs-section">
+							<div class="calc-packs-header">
+								<h3>
+									<i class="fa-solid fa-layer-group" aria-hidden="true"></i>
+									<span>Level Packs Impact</span>
+								</h3>
+								<span id="calc-packs-total" class="packs-bonus-total" data-i18n-ignore>+0.00 pts</span>
+							</div>
+							<div id="calc-completed-packs" class="calc-packs-grid" data-i18n-ignore></div>
+							<div id="calc-almost-packs-wrap" class="almost-packs-wrap hide">
+								<div class="almost-packs-label">1 Level Away from Pack Bonus:</div>
+								<div id="calc-almost-packs" class="almost-packs-list" data-i18n-ignore></div>
+							</div>
+						</div>
+					</section>
+				</div>
+
+				<!-- Right Column: Projected Leaderboard -->
+				<aside id="calc-right-col">
+					<section id="sim-leaderboard-card" class="calc-card">
+						<div class="calc-card-header lb-header">
+							<h2>
+								<i class="fa-solid fa-ranking-star" aria-hidden="true"></i>
+								<span>Projected Leaderboard</span>
+							</h2>
+							<button id="jump-to-me-btn" type="button" class="calc-btn-small">
+								<i class="fa-solid fa-crosshairs" aria-hidden="true"></i>
+								<span>Jump to Me</span>
+							</button>
+						</div>
+
+						<div class="lb-controls">
+							<div class="search-input-wrap">
+								<i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+								<input
+									id="lb-search-input"
+									type="text"
+									placeholder="Search leaderboard..."
+									autocomplete="off"
+								/>
+							</div>
+							<div class="lb-view-toggle">
+								<button id="lb-view-all" type="button" class="filter-chip active">All</button>
+								<button id="lb-view-nearby" type="button" class="filter-chip">Nearby</button>
+							</div>
+						</div>
+
+						<div id="lb-shift-note" class="lb-shift-note hide" data-i18n-ignore></div>
+
+						<ul id="sim-leaderboard-list" class="sim-leaderboard-list" data-i18n-ignore></ul>
+					</section>
+				</aside>
+			</div>
+		</main>
+	</body>
+</html>

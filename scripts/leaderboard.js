@@ -1,7 +1,5 @@
 import {
 	ref,
-	orderByChild,
-	query,
 	get,
 	update,
 } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
@@ -10,12 +8,14 @@ import {
 	auth,
 	byId,
 	db,
+	getLeaderboardBundleCached,
 	initAuthNavigation,
 	normalizeKey,
 	setText,
 	PACK_BONUS_MULTIPLIER,
 	calculatePackLevelPointsSum,
 	calculatePackBonusPoints,
+	touchDatabaseVersion,
 } from './app-common.js';
 
 const PROVINCE_MAP = {
@@ -491,31 +491,23 @@ function createPlayerListItem(player, displayRank) {
 	return listItem;
 }
 
-async function loadData() {
+async function loadData(forceRefresh = false) {
 	playerList.length = 0;
 	allPacksList.length = 0;
 	levelPositionByName.clear();
 
-	const [usersSnapshot, levelsSnapshot, packsSnapshot, tiersSnapshot] = await Promise.all([
-		get(ref(db, 'users')),
-		get(query(ref(db, 'levels'), orderByChild('pos'))),
-		get(ref(db, 'packs')),
-		get(ref(db, 'tiers')),
-	]);
+	const { users, levels, packs, tiers } = await getLeaderboardBundleCached({
+		forceRefresh,
+	});
 
 	const tiersMap = new Map();
-	tiersSnapshot.forEach((snap) => {
-		const tier = snap.val();
+	tiers.forEach((tier) => {
 		if (tier && tier.name) {
-			tiersMap.set(snap.key, {
-				key: snap.key,
-				...tier,
-			});
+			tiersMap.set(tier.key, tier);
 		}
 	});
 
-	levelsSnapshot.forEach((levelSnapshot) => {
-		const level = levelSnapshot.val();
+	levels.forEach((level) => {
 		if (!level?.name || typeof level.pos !== 'number') {
 			return;
 		}
@@ -523,12 +515,10 @@ async function loadData() {
 		levelPositionByName.set(level.name, level.pos);
 	});
 
-	packsSnapshot.forEach((packSnapshot) => {
-		const pack = packSnapshot.val();
+	packs.forEach((pack) => {
 		if (pack && pack.name && Array.isArray(pack.levels)) {
 			const assignedTier = pack.tierId ? tiersMap.get(pack.tierId) : null;
 			allPacksList.push({
-				key: packSnapshot.key,
 				...pack,
 				color: assignedTier ? assignedTier.color : (pack.color || '#e2495c'),
 				tierName: assignedTier ? assignedTier.name : null,
@@ -563,8 +553,7 @@ async function loadData() {
 		pack.bonusPoints = calculatePackBonusPoints(pack, baseSum);
 	});
 
-	usersSnapshot.forEach((userSnapshot) => {
-		const player = userSnapshot.val();
+	users.forEach((player) => {
 		const records = Object.values(player?.records ?? {});
 		if (!player?.name || !records.length) {
 			return;
@@ -592,7 +581,7 @@ async function loadData() {
 
 		playerList.push({
 			...player,
-			userKey: userSnapshot.key,
+			userKey: player.key,
 			hardest,
 			baseLevelPoints,
 			packBonusPoints,
@@ -918,8 +907,8 @@ function isInvalidDatabaseKey(value) {
 	return /[.#$/\[\]]/.test(value);
 }
 
-async function refreshLeaderboard(preferredPlayerName = '') {
-	await loadData();
+async function refreshLeaderboard(preferredPlayerName = '', forceRefresh = false) {
+	await loadData(forceRefresh);
 	renderLeaderboard();
 
 	if (!playerList.length) {
@@ -1088,10 +1077,11 @@ async function handleEditPlayerSubmit(event) {
 
 		if (Object.keys(updates).length) {
 			await update(ref(db), updates);
+			await touchDatabaseVersion();
 		}
 
 		closeEditPlayerPopup();
-		await refreshLeaderboard(newName);
+		await refreshLeaderboard(newName, true);
 	} catch (error) {
 		console.error('Failed to update player.', error);
 		alert('Could not update player. Please try again.');
@@ -1226,10 +1216,11 @@ async function handleDeletePlayer() {
 
 		if (Object.keys(updates).length > 0) {
 			await update(ref(db), updates);
+			await touchDatabaseVersion();
 		}
 
 		closeEditPlayerPopup();
-		await refreshLeaderboard();
+		await refreshLeaderboard('', true);
 	} catch (error) {
 		console.error('Failed to delete player.', error);
 		alert('Could not delete player. Please try again.');

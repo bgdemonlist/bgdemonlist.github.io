@@ -1,6 +1,5 @@
 import {
 	get,
-	onValue,
 	orderByChild,
 	query,
 	ref,
@@ -12,11 +11,14 @@ import {
 	byId,
 	calculatePoints,
 	db,
+	getLevelsCached,
 	getYouTubeThumbnail,
 	initAuthNavigation,
 	normalizeKey,
 	openExternal,
+	readCachedLevelsSync,
 	setText,
+	touchDatabaseVersion,
 } from './app-common.js';
 
 const levelSectionDiv = byId('levels-container-div');
@@ -33,8 +35,6 @@ const addPopupExit = byId('add-popup-close');
 const removePopupExit = byId('remove-popup-close');
 const removePopupInput = byId('remove-popup-input');
 const removePopupCookiesDiv = byId('remove-popup-cookies-div');
-
-const LEVELS_CACHE_KEY = 'bdl-levels-cache-v1';
 
 let levelsList = [];
 let renderedSignature = '';
@@ -59,28 +59,8 @@ onAuthStateChanged(auth, (user) => {
 	}
 });
 
-// Only the fields needed to draw the list are cached (records are left out).
-function toCacheEntry({ name, creator, video, pos }) {
+function toSignatureEntry({ name, creator, video, pos }) {
 	return { name, creator, video, pos };
-}
-
-function readCachedLevels() {
-	try {
-		const parsed = JSON.parse(localStorage.getItem(LEVELS_CACHE_KEY));
-		return Array.isArray(parsed)
-			? parsed.filter((level) => level?.name && typeof level.pos === 'number')
-			: [];
-	} catch {
-		return [];
-	}
-}
-
-function writeCachedLevels(serialized) {
-	try {
-		localStorage.setItem(LEVELS_CACHE_KEY, serialized);
-	} catch {
-		// Ignore unavailable storage in private browsing contexts.
-	}
 }
 
 function closePopups() {
@@ -209,6 +189,8 @@ async function moveLevel(level, direction) {
 		[`levels/${normalizeKey(level.name)}/pos`]: level.pos + direction,
 		[`levels/${normalizeKey(other.name)}/pos`]: level.pos,
 	});
+	await touchDatabaseVersion();
+	await loadLevels({ forceRefresh: true });
 }
 
 function renderLevels(orderedLevels) {
@@ -232,35 +214,31 @@ function renderLevels(orderedLevels) {
 	filterLevels(levelSearch?.value ?? '');
 }
 
-// Show the last known list instantly while the live data loads.
-const cachedLevels = readCachedLevels();
+async function loadLevels({ forceRefresh = false } = {}) {
+	try {
+		const { levels } = await getLevelsCached({ forceRefresh });
+		hasLiveData = true;
+		const signature = JSON.stringify(levels.map(toSignatureEntry));
+		if (signature === renderedSignature) {
+			return;
+		}
+		levelsList = levels;
+		renderedSignature = signature;
+		renderLevels(levelsList);
+	} catch (error) {
+		console.error('Failed to load levels.', error);
+	}
+}
+
+// Show the last known list instantly while checking meta/lastUpdated (~20 bytes).
+const cachedLevels = readCachedLevelsSync();
 if (cachedLevels.length > 0) {
 	levelsList = cachedLevels;
-	renderedSignature = JSON.stringify(cachedLevels.map(toCacheEntry));
+	renderedSignature = JSON.stringify(cachedLevels.map(toSignatureEntry));
 	renderLevels(levelsList);
 }
 
-onValue(query(ref(db, 'levels'), orderByChild('pos')), (snapshot) => {
-	const freshLevels = [];
-	snapshot.forEach((child) => {
-		const level = child.val();
-		if (level?.name && typeof level.pos === 'number') {
-			freshLevels.push(level);
-		}
-	});
-
-	hasLiveData = true;
-	const signature = JSON.stringify(freshLevels.map(toCacheEntry));
-	if (signature === renderedSignature) {
-		// Same list as already shown (e.g. matches the cache, or only records changed).
-		return;
-	}
-
-	levelsList = freshLevels;
-	renderedSignature = signature;
-	writeCachedLevels(signature);
-	renderLevels(levelsList);
-});
+loadLevels();
 
 levelSearch?.addEventListener('input', (event) => {
 	filterLevels(event.target.value);
@@ -330,8 +308,10 @@ addPopupForm?.addEventListener('submit', async (event) => {
 	};
 
 	await update(ref(db), updates);
+	await touchDatabaseVersion();
 	addPopupForm.reset();
 	closePopups();
+	await loadLevels({ forceRefresh: true });
 });
 
 removePopupForm?.addEventListener('submit', async (event) => {
@@ -374,6 +354,8 @@ removePopupForm?.addEventListener('submit', async (event) => {
 	updates[`levels/${key}`] = null;
 
 	await update(ref(db), updates);
+	await touchDatabaseVersion();
 	removePopupForm.reset();
 	closePopups();
+	await loadLevels({ forceRefresh: true });
 });

@@ -18,6 +18,7 @@ import {
 	normalizeKey,
 	setText,
 	setYouTubeThumbnail,
+	touchDatabaseVersion,
 } from './app-common.js';
 
 const levelName = byId('levelName');
@@ -271,6 +272,7 @@ async function setFirstVictor(record, buttonElement) {
 		);
 
 		await update(ref(db), updates);
+		await touchDatabaseVersion();
 		await loadLevel();
 	} catch (error) {
 		console.error('Failed to update first victor.', error);
@@ -385,6 +387,7 @@ async function deleteRecord(record, buttonElement) {
 		);
 
 		await update(ref(db), updates);
+		await touchDatabaseVersion();
 		await loadLevel();
 	} catch (error) {
 		console.error('Failed to delete record.', error);
@@ -841,6 +844,7 @@ addPopupForm?.addEventListener('submit', async (event) => {
 		}
 
 		await update(ref(db), updates);
+		await touchDatabaseVersion();
 
 		addPopupForm.reset();
 		setPopupVisibility(false);
@@ -995,6 +999,7 @@ editPopupForm?.addEventListener('submit', async (event) => {
 			await update(ref(db), updates);
 		}
 
+		await touchDatabaseVersion();
 		setEditPopupVisibility(false);
 		await loadLevel();
 	} catch (error) {

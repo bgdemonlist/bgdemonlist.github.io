@@ -5,7 +5,14 @@ import {
 	signInWithEmailAndPassword,
 	signOut,
 } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js';
-import { getDatabase } from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
+import {
+	get,
+	getDatabase,
+	orderByChild,
+	query,
+	ref,
+	set,
+} from 'https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js';
 
 const firebaseConfig = {
 	apiKey: 'AIzaSyBR-ImRkDyL_K3mwur6en4sXjj2WB9a-cs',
@@ -156,6 +163,7 @@ function renderNavLinks() {
 	nav.innerHTML = `
       <li><a href="roulette.html">Roulette</a></li>
       <li><a href="leaderboard.html">Leaderboard</a></li>
+      <li><a href="calculator.html">Calculator</a></li>
       <li><a href="guidelines.html">Guidelines</a></li>
       ${adminLink}
     `;
@@ -165,4 +173,269 @@ export function initAuthNavigation() {
 	onAuthStateChanged(auth, () => {
 		renderNavLinks();
 	});
+}
+
+// Versioned localStorage cache backed by a tiny `meta/lastUpdated` node (~20 bytes per visit).
+const META_LAST_UPDATED_PATH = 'meta/lastUpdated';
+const LEVELS_CACHE_KEY = 'bdl-cache-levels-v2';
+const BUNDLE_CACHE_KEY = 'bdl-cache-bundle-v2';
+const LEGACY_LEVELS_CACHE_KEY = 'bdl-levels-cache-v1';
+const FALLBACK_CACHE_TTL_MS = 15 * 60 * 1000; // Used only before meta/lastUpdated exists in RTDB.
+
+function readStorageJson(key) {
+	try {
+		const raw = localStorage.getItem(key);
+		return raw ? JSON.parse(raw) : null;
+	} catch {
+		return null;
+	}
+}
+
+function writeStorageJson(key, value) {
+	try {
+		localStorage.setItem(key, JSON.stringify(value));
+	} catch {
+		// Ignore quota or private-browsing storage errors.
+	}
+}
+
+function removeStorageKey(key) {
+	try {
+		localStorage.removeItem(key);
+	} catch {
+		// Ignore unavailable storage.
+	}
+}
+
+export function clearLocalDataCaches() {
+	removeStorageKey(LEVELS_CACHE_KEY);
+	removeStorageKey(BUNDLE_CACHE_KEY);
+	removeStorageKey(LEGACY_LEVELS_CACHE_KEY);
+}
+
+export async function touchDatabaseVersion() {
+	clearLocalDataCaches();
+	try {
+		await set(ref(db, META_LAST_UPDATED_PATH), Date.now());
+	} catch (error) {
+		console.warn('Could not update meta/lastUpdated timestamp.', error);
+	}
+}
+
+async function fetchRemoteVersion() {
+	try {
+		const snap = await get(ref(db, META_LAST_UPDATED_PATH));
+		const value = snap.val();
+		return value !== null && value !== undefined ? value : null;
+	} catch {
+		return null;
+	}
+}
+
+function isCacheEntryValid(entry, remoteVersion) {
+	if (!entry || typeof entry !== 'object') {
+		return false;
+	}
+	if (remoteVersion !== null) {
+		return entry.version === remoteVersion;
+	}
+	return (
+		entry.version === null &&
+		Number.isFinite(entry.cachedAt) &&
+		Date.now() - entry.cachedAt < FALLBACK_CACHE_TTL_MS
+	);
+}
+
+function extractCompactLevels(levelsSnapshot) {
+	const levels = [];
+	levelsSnapshot.forEach((snap) => {
+		const val = snap.val();
+		if (!val?.name || typeof val.pos !== 'number') {
+			return;
+		}
+		// Strip nested `records` so cached levels stay tiny.
+		levels.push({
+			key: snap.key,
+			name: val.name,
+			creator: val.creator || '',
+			video: val.video || '',
+			pos: val.pos,
+		});
+	});
+	levels.sort((a, b) => a.pos - b.pos);
+	return levels;
+}
+
+function extractCompactUsers(usersSnapshot) {
+	const users = [];
+	usersSnapshot.forEach((snap) => {
+		const val = snap.val();
+		const rawRecords = val?.records;
+		if (!val?.name || !rawRecords || typeof rawRecords !== 'object') {
+			return;
+		}
+		const records = {};
+		let count = 0;
+		Object.entries(rawRecords).forEach(([recKey, rec]) => {
+			if (!rec?.name) return;
+			records[recKey] = {
+				name: rec.name,
+				video: rec.video || '',
+				first: Boolean(rec.first),
+			};
+			count += 1;
+		});
+		if (count === 0) return;
+		users.push({
+			key: snap.key,
+			name: val.name,
+			province: val.province || '',
+			records,
+		});
+	});
+	return users;
+}
+
+function extractCompactPacks(packsSnapshot) {
+	const packs = [];
+	packsSnapshot.forEach((snap) => {
+		const val = snap.val();
+		if (!val?.name || !Array.isArray(val.levels)) {
+			return;
+		}
+		packs.push({
+			key: snap.key,
+			...val,
+		});
+	});
+	return packs;
+}
+
+function extractCompactTiers(tiersSnapshot) {
+	const tiers = [];
+	tiersSnapshot.forEach((snap) => {
+		const val = snap.val();
+		if (!val?.name) {
+			return;
+		}
+		tiers.push({
+			key: snap.key,
+			...val,
+		});
+	});
+	return tiers;
+}
+
+export function readCachedLevelsSync() {
+	const cached = readStorageJson(LEVELS_CACHE_KEY);
+	return Array.isArray(cached?.levels) ? cached.levels : [];
+}
+
+export async function getLevelsCached({ forceRefresh = false } = {}) {
+	const remoteVersion = await fetchRemoteVersion();
+
+	if (!forceRefresh) {
+		const cached = readStorageJson(LEVELS_CACHE_KEY);
+		if (Array.isArray(cached?.levels) && isCacheEntryValid(cached, remoteVersion)) {
+			return {
+				levels: cached.levels,
+				fromCache: true,
+				version: remoteVersion,
+			};
+		}
+	}
+
+	const levelsSnapshot = await get(query(ref(db, 'levels'), orderByChild('pos')));
+	const levels = extractCompactLevels(levelsSnapshot);
+
+	writeStorageJson(LEVELS_CACHE_KEY, {
+		version: remoteVersion,
+		cachedAt: Date.now(),
+		levels,
+	});
+
+	return {
+		levels,
+		fromCache: false,
+		version: remoteVersion,
+	};
+}
+
+export async function getLeaderboardBundleCached({ forceRefresh = false } = {}) {
+	const remoteVersion = await fetchRemoteVersion();
+
+	if (!forceRefresh) {
+		const cachedBundle = readStorageJson(BUNDLE_CACHE_KEY);
+		if (
+			cachedBundle &&
+			Array.isArray(cachedBundle.users) &&
+			Array.isArray(cachedBundle.levels) &&
+			Array.isArray(cachedBundle.packs) &&
+			Array.isArray(cachedBundle.tiers) &&
+			isCacheEntryValid(cachedBundle, remoteVersion)
+		) {
+			return {
+				users: cachedBundle.users,
+				levels: cachedBundle.levels,
+				packs: cachedBundle.packs,
+				tiers: cachedBundle.tiers,
+				fromCache: true,
+				version: remoteVersion,
+			};
+		}
+	}
+
+	// Reuse fresh levels cache if already loaded by index.html or roulette.html!
+	let levels = null;
+	if (!forceRefresh) {
+		const cachedLevels = readStorageJson(LEVELS_CACHE_KEY);
+		if (
+			Array.isArray(cachedLevels?.levels) &&
+			isCacheEntryValid(cachedLevels, remoteVersion)
+		) {
+			levels = cachedLevels.levels;
+		}
+	}
+
+	const requests = [
+		get(ref(db, 'users')),
+		get(ref(db, 'packs')),
+		get(ref(db, 'tiers')),
+	];
+	if (!levels) {
+		requests.push(get(query(ref(db, 'levels'), orderByChild('pos'))));
+	}
+
+	const snapshots = await Promise.all(requests);
+	const users = extractCompactUsers(snapshots[0]);
+	const packs = extractCompactPacks(snapshots[1]);
+	const tiers = extractCompactTiers(snapshots[2]);
+
+	const now = Date.now();
+	if (!levels) {
+		levels = extractCompactLevels(snapshots[3]);
+		writeStorageJson(LEVELS_CACHE_KEY, {
+			version: remoteVersion,
+			cachedAt: now,
+			levels,
+		});
+	}
+
+	writeStorageJson(BUNDLE_CACHE_KEY, {
+		version: remoteVersion,
+		cachedAt: now,
+		users,
+		levels,
+		packs,
+		tiers,
+	});
+
+	return {
+		users,
+		levels,
+		packs,
+		tiers,
+		fromCache: false,
+		version: remoteVersion,
+	};
 }
